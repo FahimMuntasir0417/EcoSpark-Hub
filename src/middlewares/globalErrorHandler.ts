@@ -7,7 +7,7 @@ import { z } from "zod";
 
 export const globalErrorHandler = (
   err: unknown,
-  req: Request,
+  _req: Request,
   res: Response,
 ) => {
   let errorSources: TErrorSources[] = [];
