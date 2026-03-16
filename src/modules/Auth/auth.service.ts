@@ -66,6 +66,15 @@ const buildTokenPayload = (user: {
 
 const registerMember = async (payload: IRegisterMemberPayload) => {
   const { name, email, password } = payload;
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (existingUser && existingUser.status !== UserStatus.DELETED) {
+    throw new AppError(status.CONFLICT, "Email already registered");
+  }
 
   const data = await auth.api.signUpEmail({
     body: {
@@ -121,11 +130,21 @@ const registerMember = async (payload: IRegisterMemberPayload) => {
       memberProfile,
     };
   } catch (error) {
-    await prisma.user.delete({
+    console.error("registerMember failed:", error);
+
+    const existingUser = await prisma.user.findUnique({
       where: {
         id: data.user.id,
       },
     });
+
+    if (existingUser) {
+      await prisma.user.delete({
+        where: {
+          id: data.user.id,
+        },
+      });
+    }
 
     throw error;
   }

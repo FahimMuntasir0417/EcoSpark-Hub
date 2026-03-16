@@ -1,6 +1,14 @@
 model Scientist {
   id                 String             @id @default(cuid())
-  userId             String             @unique
+ 
+
+  name          String
+  email         String    @unique
+  profilePhoto  String?
+  contactNumber String?
+  address       String?
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
 
   institution        String?            @db.VarChar(150)
   department         String?            @db.VarChar(150)
@@ -16,8 +24,8 @@ model Scientist {
   verifiedAt         DateTime?
   verifiedById       String?
 
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // verifiedBy      User?              @relation("ScientistVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   scientistSpecialties ScientistSpecialty[]
 
