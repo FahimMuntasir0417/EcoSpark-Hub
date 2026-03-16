@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Your OTP</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f6f7fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111827;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7fb;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(17,24,39,.08);">
+            <tr>
+              <td style="padding:28px 28px 10px;">
+                <div style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;">
+                  Verification Code
+                </div>
+                <h2 style="margin:10px 0 6px;font-size:22px;line-height:1.25;color:#111827;">
+                  Hello <%= name %>,
+                </h2>
+                <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#374151;">
+                  Use the one-time passcode below to finish signing in. This code expires in
+                  <b>2 minutes</b>.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:10px 28px 18px;">
+                <div
+                  style="
+                    display:inline-block;
+                    padding:16px 22px;
+                    border-radius:14px;
+                    background:#f3f4f6;
+                    border:1px solid #e5e7eb;
+                    font-size:28px;
+                    letter-spacing:.35em;
+                    font-weight:700;
+                    color:#111827;
+                    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+                  "
+                >
+                  <%= otp %>
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:#6b7280;">
+                  If you didn’t request this, you can safely ignore this email.
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:0 28px 26px;">
+                <div style="height:1px;background:#e5e7eb;"></div>
+                <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">
+                  For your security, don’t share this code with anyone. Our team will never ask you for it.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 28px;background:#f9fafb;font-size:12px;color:#6b7280;">
+                © <%= new Date().getFullYear() %> Your Company
+              </td>
+            </tr>
+          </table>
+
+          <div style="max-width:600px;margin-top:14px;font-size:12px;color:#9ca3af;line-height:1.6;">
+            Trouble viewing? Copy the code <b><%= otp %></b> and paste it into the app.
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
