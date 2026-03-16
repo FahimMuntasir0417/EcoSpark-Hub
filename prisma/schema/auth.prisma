@@ -1,23 +1,28 @@
 model User {
   id                 String     @id
-  name               String
-  email              String
+  name               String     @db.VarChar(150)
+  email              String     @unique @db.VarChar(255)
   emailVerified      Boolean    @default(false)
   role               Role       @default(MEMBER)
   status             UserStatus @default(ACTIVE)
   needPasswordChange Boolean    @default(false)
   isDeleted          Boolean    @default(false)
   deletedAt          DateTime?
-  image              String?
+  image              String?    @db.VarChar(500)
+
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
+
   sessions           Session[]
   accounts           Account[]
- 
-  admin              Admin?
 
-  @@unique([email])
-  @@map("user")
+  admin              Admin?
+  scientist          Scientist?
+  member             Member?
+
+  @@index([status], name: "idx_user_status")
+  @@index([isDeleted], name: "idx_user_is_deleted")
+  @@map("users")
 }
 
 model Session {

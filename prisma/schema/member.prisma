@@ -1,0 +1,17 @@
+model Member {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+
+  occupation          String?  @db.VarChar(150)
+  interests           String?  @db.Text
+  experienceLevel     String?  @db.VarChar(50)
+  preferredCategories String?  @db.Text
+  membershipLevel     String?  @db.VarChar(50)
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("members")
+}

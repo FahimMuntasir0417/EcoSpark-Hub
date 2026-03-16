@@ -1,0 +1,28 @@
+model Scientist {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+
+  institution        String?            @db.VarChar(150)
+  department         String?            @db.VarChar(150)
+  specialization     String?            @db.VarChar(150)
+  researchInterests  String?            @db.Text
+  yearsOfExperience  Int?
+  qualification      String?            @db.VarChar(150)
+  linkedinUrl        String?            @db.VarChar(500)
+  googleScholarUrl   String?            @db.VarChar(500)
+  orcid              String?            @unique @db.VarChar(19)
+
+    
+  verifiedAt         DateTime?
+  verifiedById       String?
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // verifiedBy      User?              @relation("ScientistVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  scientistSpecialties ScientistSpecialty[]
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@map("scientists")
+}
