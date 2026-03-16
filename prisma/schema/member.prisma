@@ -2,6 +2,12 @@ model Member {
   id                  String   @id @default(cuid())
   userId              String   @unique
 
+  name                String?  @db.VarChar(255)
+  email               String?  @db.VarChar(255)
+  profilePhoto        String?
+  contactNumber       String?
+  address             String?
+
   occupation          String?  @db.VarChar(150)
   interests           String?  @db.Text
   experienceLevel     String?  @db.VarChar(50)
