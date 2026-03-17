@@ -1,0 +1,152 @@
+model Idea {
+  id                  String  @id @default(cuid())
+  title               String
+  slug                String  @unique
+  excerpt             String?
+  problemStatement    String
+  proposedSolution    String
+  description         String
+  implementationSteps String?
+  risksAndChallenges  String?
+  requiredResources   String?
+  expectedBenefits    String?
+  targetAudience      String?
+  coverImageUrl       String?
+  videoUrl            String?
+
+  status            IdeaStatus     @default(DRAFT)
+  visibility        IdeaVisibility @default(PUBLIC)
+  accessType        IdeaAccessType @default(FREE)
+  price             Decimal?       @db.Decimal(10, 2)
+  currency          String         @default("USD")
+  rejectionFeedback String?
+  adminNote         String?
+  isFeatured        Boolean        @default(false)
+  featuredAt        DateTime?
+  isHighlighted     Boolean        @default(false)
+
+  authorId String
+  author   User   @relation("IdeaAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  estimatedCost        Int?
+  implementationEffort Int?
+  expectedImpact       Int?
+  timeToImplementDays  Int?
+  resourceAvailability Int?
+  innovationLevel      Int?
+  scalabilityScore     Int?
+
+  feasibilityScore Float?
+  impactScore      Float?
+  ecoScore         Float?
+
+  estimatedWasteReductionKgMonth Float?
+  estimatedCo2ReductionKgMonth   Float?
+  estimatedCostSavingsMonth      Float?
+  estimatedWaterSavedLitersMonth Float?
+  estimatedEnergySavedKwhMonth   Float?
+
+  totalViews     Int    @default(0)
+  uniqueViews    Int    @default(0)
+  totalUpvotes   Int    @default(0)
+  totalDownvotes Int    @default(0)
+  totalComments  Int    @default(0)
+  totalBookmarks Int    @default(0)
+  averageRating  Float?
+  trendingScore  Float?
+
+  submittedAt    DateTime?
+  reviewedAt     DateTime?
+  publishedAt    DateTime?
+  lastActivityAt DateTime?
+  archivedAt     DateTime?
+  deletedAt      DateTime?
+
+  seoTitle       String?
+  seoDescription String?
+
+  statusLogs        IdeaStatusLog[]
+  votes             Vote[]
+  comments          Comment[]
+  purchases         IdeaPurchase[]
+  experienceReports ExperienceReport[]
+  bookmarks         IdeaBookmark[]
+  attachments       IdeaAttachment[]
+  media             IdeaMedia[]
+  tags              IdeaTag[]
+  reports           IdeaReport[]
+  moderationActions ModerationAction[]
+  reviewFeedbacks   IdeaReviewFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([status, isFeatured])
+  @@index([authorId, status])
+  @@index([categoryId, status])
+  @@index([campaignId])
+  @@index([accessType])
+  @@index([ecoScore])
+  @@index([publishedAt])
+  @@index([trendingScore])
+  @@index([submittedAt])
+  @@index([lastActivityAt])
+  @@index([deletedAt])
+}
+
+model IdeaTag {
+  id     String @id @default(cuid())
+  ideaId String
+  tagId  String
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([ideaId, tagId])
+  @@index([tagId])
+}
+
+model IdeaAttachment {
+  id            String         @id @default(cuid())
+  ideaId        String
+  title         String?
+  fileUrl       String
+  fileType      AttachmentType
+  fileName      String?
+  fileSizeBytes Int?
+  mimeType      String?
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ideaId, fileType])
+}
+
+model IdeaMedia {
+  id        String    @id @default(cuid())
+  ideaId    String
+  url       String
+  type      MediaType
+  altText   String?
+  caption   String?
+  sortOrder Int       @default(0)
+  isPrimary Boolean   @default(false)
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ideaId, type])
+  @@index([ideaId, sortOrder])
+}

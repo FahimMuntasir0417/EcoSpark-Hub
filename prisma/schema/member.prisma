@@ -1,23 +1,21 @@
 model Member {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
+  id     String @id @default(cuid())
+  userId String @unique
 
-  name                String?  @db.VarChar(255)
-  email               String?  @db.VarChar(255)
-  profilePhoto        String?
-  contactNumber       String?
-  address             String?
+  profilePhoto  String?
+  contactNumber String?
+  address       String?
 
-  occupation          String?  @db.VarChar(150)
-  interests           String?  @db.Text
-  experienceLevel     String?  @db.VarChar(50)
-  preferredCategories String?  @db.Text
-  membershipLevel     String?  @db.VarChar(50)
+  occupation          String? @db.VarChar(150)
+  interests           String? @db.Text
+  experienceLevel     String? @db.VarChar(50)
+  preferredCategories String? @db.Text
+  membershipLevel     String? @db.VarChar(50)
 
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("members")
 }

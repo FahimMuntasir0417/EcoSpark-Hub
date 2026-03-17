@@ -227,9 +227,12 @@ const updateScientist = async (
   }
 
   if (payload.email && payload.email !== existingScientist.email) {
-    const scientistByEmail = await prisma.scientist.findUnique({
+    const scientistByEmail = await prisma.scientist.findFirst({
       where: {
         email: payload.email,
+        NOT: {
+          id,
+        },
       },
     });
 
@@ -237,6 +240,25 @@ const updateScientist = async (
       throw new AppError(
         status.CONFLICT,
         "Scientist with this email already exists",
+      );
+    }
+
+    const userByEmail = await prisma.user.findFirst({
+      where: {
+        email: payload.email,
+        NOT: {
+          id: existingScientist.userId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (userByEmail) {
+      throw new AppError(
+        status.CONFLICT,
+        "User with this email already exists",
       );
     }
   }
@@ -256,15 +278,63 @@ const updateScientist = async (
     }
   }
 
-  const updatedScientist = await prisma.scientist.update({
-    where: {
-      id,
-    },
-    data: {
-      ...payload,
-      verifiedAt: payload.verifiedById ? new Date() : undefined,
-    },
-    include: scientistInclude,
+  if (payload.verifiedById) {
+    const verifier = await prisma.user.findUnique({
+      where: {
+        id: payload.verifiedById,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!verifier) {
+      throw new AppError(status.BAD_REQUEST, "Invalid verifiedById");
+    }
+  }
+
+  const updatedScientist = await prisma.$transaction(async (tx) => {
+    await tx.scientist.update({
+      where: {
+        id,
+      },
+      data: {
+        ...payload,
+        verifiedAt: payload.verifiedById ? new Date() : undefined,
+      },
+    });
+
+    const userData: { name?: string; email?: string } = {};
+
+    if (payload.name !== undefined) {
+      userData.name = payload.name;
+    }
+
+    if (payload.email !== undefined) {
+      userData.email = payload.email;
+    }
+
+    if (Object.keys(userData).length > 0) {
+      await tx.user.update({
+        where: {
+          id: existingScientist.userId,
+        },
+        data: userData,
+      });
+    }
+
+    const scientist = await tx.scientist.findUnique({
+      where: {
+        id,
+      },
+      include: scientistInclude,
+    });
+
+    if (!scientist) {
+      throw new AppError(status.NOT_FOUND, "Scientist not found");
+    }
+
+    return scientist;
   });
 
   return updatedScientist;

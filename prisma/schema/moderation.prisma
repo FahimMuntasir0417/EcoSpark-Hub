@@ -1,0 +1,93 @@
+model IdeaStatusLog {
+  id         String      @id @default(cuid())
+  ideaId     String
+  actorId    String
+  fromStatus IdeaStatus?
+  toStatus   IdeaStatus
+  note       String?
+
+  idea  Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  actor User @relation("StatusLogActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([ideaId, createdAt])
+  @@index([actorId])
+}
+
+model IdeaReviewFeedback {
+  id                String       @id @default(cuid())
+  ideaId            String
+  reviewerId        String
+  feedbackType      FeedbackType @default(REJECTION)
+  title             String?
+  message           String
+  isVisibleToAuthor Boolean      @default(true)
+
+  idea     Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  reviewer User @relation("IdeaReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ideaId, feedbackType])
+  @@index([reviewerId])
+}
+
+model CommentReport {
+  id         String           @id @default(cuid())
+  commentId  String
+  reporterId String
+  reason     ReportReason
+  note       String?
+  status     ModerationStatus @default(PENDING)
+
+  comment  Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporter User    @relation("CommentReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([commentId, reporterId], name: "uniq_comment_report_comment_reporter")
+  @@index([commentId, status])
+  @@index([reporterId])
+}
+
+model IdeaReport {
+  id         String           @id @default(cuid())
+  ideaId     String
+  reporterId String
+  reason     ReportReason
+  note       String?
+  status     ModerationStatus @default(PENDING)
+
+  idea     Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  reporter User @relation("IdeaReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([ideaId, reporterId], name: "uniq_idea_report_idea_reporter")
+  @@index([ideaId, status])
+  @@index([reporterId])
+}
+
+model ModerationAction {
+  id         String               @id @default(cuid())
+  actorId    String
+  ideaId     String?
+  commentId  String?
+  actionType ModerationActionType
+  note       String?
+  metadata   Json?
+
+  actor   User     @relation("ModerationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  idea    Idea?    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId, actionType])
+  @@index([ideaId])
+  @@index([commentId])
+}

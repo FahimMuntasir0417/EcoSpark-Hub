@@ -93,8 +93,6 @@ const registerMember = async (payload: IRegisterMemberPayload) => {
       return tx.member.create({
         data: {
           userId: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
         },
       });
     });
@@ -461,14 +459,29 @@ const googleLoginSuccess = async (session: Record<string, any>) => {
     },
   });
 
-  if (!existingMemberProfile && session.user.role === Role.MEMBER) {
-    await prisma.member.create({
-      data: {
-        userId: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-      },
-    });
+  if (session.user.role === Role.MEMBER) {
+    if (!existingMemberProfile) {
+      await prisma.member.create({
+        data: {
+          userId: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+        },
+      });
+    } else if (
+      existingMemberProfile.name !== session.user.name ||
+      existingMemberProfile.email !== session.user.email
+    ) {
+      await prisma.member.update({
+        where: {
+          userId: session.user.id,
+        },
+        data: {
+          name: session.user.name,
+          email: session.user.email,
+        },
+      });
+    }
   }
 
   const tokenPayload = {

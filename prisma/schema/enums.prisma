@@ -1,5 +1,7 @@
 enum Role {
-   SUPER_ADMIN
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
   SCIENTIST
   MEMBER
 }
@@ -8,6 +10,7 @@ enum UserStatus {
   ACTIVE
   BLOCKED
   DELETED
+  SUSPENDED
 }
 
 enum Gender {
@@ -27,9 +30,93 @@ enum BloodGroup {
   O_NEGATIVE
 }
 
-
-
 enum PaymentStatus {
+  PENDING
   PAID
-  UNPAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum IdeaStatus {
+  DRAFT
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum IdeaVisibility {
+  PUBLIC
+  PRIVATE
+  UNLISTED
+}
+
+enum IdeaAccessType {
+  FREE
+  PAID
+  MEMBERS_ONLY
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  IDEA_APPROVED
+  IDEA_REJECTED
+  REPORT_APPROVED
+  REPORT_REJECTED
+  COMMENT_REPLY
+  PURCHASE_SUCCESS
+  PURCHASE_FAILED
+  NEW_FEATURED_IDEA
+  IDEA_UNDER_REVIEW
+  SYSTEM
+}
+
+enum AttachmentType {
+  PDF
+  DOC
+  IMAGE
+  VIDEO
+  OTHER
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum FeedbackType {
+  REVIEW
+  REJECTION
+  IMPROVEMENT
+}
+
+enum ReportReason {
+  SPAM
+  ABUSE
+  MISINFORMATION
+  INAPPROPRIATE
+  COPYRIGHT
+  OTHER
+}
+
+enum ModerationActionType {
+  IDEA_APPROVED
+  IDEA_REJECTED
+  IDEA_ARCHIVED
+  COMMENT_DELETED
+  COMMENT_RESTORED
+  USER_SUSPENDED
+  USER_BLOCKED
+  REPORT_RESOLVED
 }

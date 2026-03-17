@@ -164,7 +164,11 @@ export const updateScientistSchema = z
       .max(19, "ORCID cannot be more than 19 characters")
       .optional(),
 
-    verifiedById: z.string().trim().optional(),
+    verifiedById: z
+      .string()
+      .trim()
+      .min(1, "verifiedById cannot be empty")
+      .optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {

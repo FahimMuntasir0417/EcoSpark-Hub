@@ -1,0 +1,63 @@
+model ExperienceReport {
+  id       String @id @default(cuid())
+  ideaId   String
+  authorId String
+
+  title               String
+  summary             String
+  outcome             String
+  challenges          String?
+  measurableResult    String?
+  adoptedScale        String?
+  location            String?
+  effectivenessRating Int
+
+  beforeImageUrl String?
+  afterImageUrl  String?
+
+  status     ModerationStatus @default(PENDING)
+  isFeatured Boolean          @default(false)
+
+  idea   Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ideaId, status])
+  @@index([authorId])
+  @@index([isFeatured])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  actionUrl String?
+  metadata  Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+model NewsletterSubscription {
+  id             String    @id @default(cuid())
+  email          String
+  userId         String?
+  isActive       Boolean   @default(true)
+  source         String?
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([email])
+  @@index([isActive])
+  @@index([userId])
+}

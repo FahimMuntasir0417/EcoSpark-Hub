@@ -1,0 +1,59 @@
+model Vote {
+  id     String   @id @default(cuid())
+  ideaId String
+  userId String
+  type   VoteType
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([ideaId, userId])
+  @@index([ideaId, type])
+  @@index([userId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String
+  isDeleted Boolean   @default(false)
+  isEdited  Boolean   @default(false)
+  deletedAt DateTime?
+
+  ideaId String
+  idea   Idea   @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  reports           CommentReport[]
+  moderationActions ModerationAction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ideaId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([isDeleted])
+}
+
+model IdeaBookmark {
+  id     String @id @default(cuid())
+  ideaId String
+  userId String
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([ideaId, userId])
+  @@index([userId])
+}

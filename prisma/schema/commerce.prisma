@@ -1,0 +1,50 @@
+model IdeaPurchase {
+  id                String        @id @default(cuid())
+  ideaId            String
+  userId            String
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("USD")
+  paymentProvider   String
+  providerPaymentId String?       @unique
+  status            PaymentStatus @default(PENDING)
+  paidAt            DateTime?
+  refundedAt        DateTime?
+  accessExpiresAt   DateTime?
+  receiptUrl        String?
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions PaymentTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([ideaId])
+  @@index([ideaId, userId])
+  @@index([paidAt])
+}
+
+model PaymentTransaction {
+  id              String        @id @default(cuid())
+  purchaseId      String
+  userId          String
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  provider        String
+  transactionId   String        @unique
+  status          PaymentStatus
+  gatewayResponse Json?
+  failureReason   String?
+
+  purchase IdeaPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([purchaseId])
+  @@index([userId, status])
+  @@index([transactionId])
+}

@@ -1,20 +1,33 @@
 model Category {
-  id                    String                   @id @default(cuid())
-  name                  String                   @unique
-  slug                  String                   @unique
-  description           String?
-  icon                  String?
-  color                 String?
-  sortOrder             Int                      @default(0)
-  isActive              Boolean                  @default(true)
-  seoTitle              String?
-  seoDescription        String?
+  id             String  @id @default(cuid())
+  name           String  @unique
+  slug           String  @unique
+  description    String?
+  icon           String?
+  color          String?
+  sortOrder      Int     @default(0)
+  isActive       Boolean @default(true)
+  seoTitle       String?
+  seoDescription String?
 
-  ideas                 Idea[]
+  ideas Idea[]
 
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([slug])
   @@index([isActive, sortOrder])
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  ideaTags IdeaTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
 }

@@ -10,15 +10,34 @@ model User {
   deletedAt          DateTime?
   image              String?    @db.VarChar(500)
 
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sessions           Session[]
-  accounts           Account[]
+  sessions Session[]
+  accounts Account[]
 
-  admin              Admin?
-  scientist          Scientist?
-  member             Member?
+  admin     Admin?
+  scientist Scientist?
+  member    Member?
+
+  verifiedScientists Scientist[] @relation("ScientistVerifiedBy")
+
+  createdIdeas        Idea[]               @relation("IdeaAuthor")
+  createdCampaigns    Campaign[]           @relation("CampaignCreator")
+  statusLogs          IdeaStatusLog[]      @relation("StatusLogActor")
+  ideaReviewFeedbacks IdeaReviewFeedback[] @relation("IdeaReviewer")
+
+  votes               Vote[]
+  comments            Comment[]
+  purchases           IdeaPurchase[]
+  paymentTransactions PaymentTransaction[]
+  experienceReports   ExperienceReport[]
+  notifications       Notification[]
+  bookmarks           IdeaBookmark[]
+  subscriptions       NewsletterSubscription[]
+  moderationActions   ModerationAction[]       @relation("ModerationActor")
+  commentReports      CommentReport[]          @relation("CommentReportReporter")
+  ideaReports         IdeaReport[]             @relation("IdeaReportReporter")
 
   @@index([status], name: "idx_user_status")
   @@index([isDeleted], name: "idx_user_is_deleted")
