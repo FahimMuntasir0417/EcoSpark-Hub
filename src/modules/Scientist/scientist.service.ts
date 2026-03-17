@@ -45,6 +45,12 @@ const scientistInclude = {
 } as const;
 
 const createScientist = async (payload: ICreateScientistPayload) => {
+  const {
+    name,
+    email,
+    ...scientistProfileData
+  } = payload.scientist;
+
   const specialties: Array<{ id: string }> = [];
 
   for (const specialtyId of payload.specialties) {
@@ -70,7 +76,7 @@ const createScientist = async (payload: ICreateScientistPayload) => {
 
   const userExists = await prisma.user.findUnique({
     where: {
-      email: payload.scientist.email,
+      email,
     },
   });
 
@@ -78,23 +84,10 @@ const createScientist = async (payload: ICreateScientistPayload) => {
     throw new AppError(status.CONFLICT, "User with this email already exists");
   }
 
-  const scientistExists = await prisma.scientist.findUnique({
-    where: {
-      email: payload.scientist.email,
-    },
-  });
-
-  if (scientistExists) {
-    throw new AppError(
-      status.CONFLICT,
-      "Scientist with this email already exists",
-    );
-  }
-
-  if (payload.scientist.orcid) {
+  if (scientistProfileData.orcid) {
     const orcidExists = await prisma.scientist.findFirst({
       where: {
-        orcid: payload.scientist.orcid,
+        orcid: scientistProfileData.orcid,
       },
     });
 
@@ -108,10 +101,10 @@ const createScientist = async (payload: ICreateScientistPayload) => {
 
   const userData = await auth.api.signUpEmail({
     body: {
-      email: payload.scientist.email,
+      email,
       password: payload.password,
       role: Role.SCIENTIST,
-      name: payload.scientist.name,
+      name,
       needPasswordChange: true,
     },
   });
@@ -125,7 +118,7 @@ const createScientist = async (payload: ICreateScientistPayload) => {
       const scientistData = await tx.scientist.create({
         data: {
           userId: userData.user.id,
-          ...payload.scientist,
+          ...scientistProfileData,
         },
       });
 
@@ -215,10 +208,21 @@ const updateScientist = async (
   id: string,
   payload: IUpdateScientistPayload,
 ) => {
+  const {
+    name,
+    email,
+    ...scientistUpdateData
+  } = payload;
+
   const existingScientist = await prisma.scientist.findFirst({
     where: {
       id,
       isDeleted: false,
+    },
+    select: {
+      id: true,
+      userId: true,
+      orcid: true,
     },
   });
 
@@ -226,26 +230,10 @@ const updateScientist = async (
     throw new AppError(status.NOT_FOUND, "Scientist not found");
   }
 
-  if (payload.email && payload.email !== existingScientist.email) {
-    const scientistByEmail = await prisma.scientist.findFirst({
-      where: {
-        email: payload.email,
-        NOT: {
-          id,
-        },
-      },
-    });
-
-    if (scientistByEmail) {
-      throw new AppError(
-        status.CONFLICT,
-        "Scientist with this email already exists",
-      );
-    }
-
+  if (email) {
     const userByEmail = await prisma.user.findFirst({
       where: {
-        email: payload.email,
+        email,
         NOT: {
           id: existingScientist.userId,
         },
@@ -263,10 +251,13 @@ const updateScientist = async (
     }
   }
 
-  if (payload.orcid && payload.orcid !== existingScientist.orcid) {
+  if (
+    scientistUpdateData.orcid &&
+    scientistUpdateData.orcid !== existingScientist.orcid
+  ) {
     const scientistByOrcid = await prisma.scientist.findFirst({
       where: {
-        orcid: payload.orcid,
+        orcid: scientistUpdateData.orcid,
         NOT: {
           id,
         },
@@ -278,10 +269,10 @@ const updateScientist = async (
     }
   }
 
-  if (payload.verifiedById) {
+  if (scientistUpdateData.verifiedById) {
     const verifier = await prisma.user.findUnique({
       where: {
-        id: payload.verifiedById,
+        id: scientistUpdateData.verifiedById,
       },
       select: {
         id: true,
@@ -299,19 +290,19 @@ const updateScientist = async (
         id,
       },
       data: {
-        ...payload,
-        verifiedAt: payload.verifiedById ? new Date() : undefined,
+        ...scientistUpdateData,
+        verifiedAt: scientistUpdateData.verifiedById ? new Date() : undefined,
       },
     });
 
     const userData: { name?: string; email?: string } = {};
 
-    if (payload.name !== undefined) {
-      userData.name = payload.name;
+    if (name !== undefined) {
+      userData.name = name;
     }
 
-    if (payload.email !== undefined) {
-      userData.email = payload.email;
+    if (email !== undefined) {
+      userData.email = email;
     }
 
     if (Object.keys(userData).length > 0) {
