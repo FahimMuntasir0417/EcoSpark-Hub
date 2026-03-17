@@ -19,6 +19,10 @@ const parseRole = (role: string): Role => {
   switch (role) {
     case Role.SUPER_ADMIN:
       return Role.SUPER_ADMIN;
+    case Role.ADMIN:
+      return Role.ADMIN;
+    case Role.MODERATOR:
+      return Role.MODERATOR;
     case Role.SCIENTIST:
       return Role.SCIENTIST;
     case Role.MEMBER:
@@ -36,6 +40,8 @@ const parseUserStatus = (userStatus: string): UserStatus => {
       return UserStatus.BLOCKED;
     case UserStatus.DELETED:
       return UserStatus.DELETED;
+    case UserStatus.SUSPENDED:
+      return UserStatus.SUSPENDED;
     default:
       throw new AppError(
         status.BAD_REQUEST,
@@ -166,6 +172,10 @@ const loginUser = async (payload: ILoginUserPayload) => {
     throw new AppError(status.FORBIDDEN, "User is blocked");
   }
 
+  if (data.user.status === UserStatus.SUSPENDED) {
+    throw new AppError(status.FORBIDDEN, "User is suspended");
+  }
+
   if (data.user.status === UserStatus.DELETED) {
     throw new AppError(status.FORBIDDEN, "User is deleted");
   }
@@ -240,6 +250,10 @@ const getNewToken = async (refreshToken: string, sessionToken: string) => {
 
   if (session.user.status === UserStatus.BLOCKED) {
     throw new AppError(status.FORBIDDEN, "User is blocked");
+  }
+
+  if (session.user.status === UserStatus.SUSPENDED) {
+    throw new AppError(status.FORBIDDEN, "User is suspended");
   }
 
   if (session.user.status === UserStatus.DELETED) {
@@ -394,6 +408,10 @@ const forgetPassword = async (email: string) => {
     throw new AppError(status.FORBIDDEN, "User is blocked");
   }
 
+  if (existingUser.status === UserStatus.SUSPENDED) {
+    throw new AppError(status.FORBIDDEN, "User is suspended");
+  }
+
   if (existingUser.status === UserStatus.DELETED) {
     throw new AppError(status.FORBIDDEN, "User is deleted");
   }
@@ -432,6 +450,10 @@ const resetPassword = async (
     throw new AppError(status.FORBIDDEN, "User is blocked");
   }
 
+  if (existingUser.status === UserStatus.SUSPENDED) {
+    throw new AppError(status.FORBIDDEN, "User is suspended");
+  }
+
   if (existingUser.status === UserStatus.DELETED) {
     throw new AppError(status.FORBIDDEN, "User is deleted");
   }
@@ -453,35 +475,16 @@ const resetPassword = async (
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const googleLoginSuccess = async (session: Record<string, any>) => {
-  const existingMemberProfile = await prisma.member.findUnique({
-    where: {
-      userId: session.user.id,
-    },
-  });
-
   if (session.user.role === Role.MEMBER) {
-    if (!existingMemberProfile) {
-      await prisma.member.create({
-        data: {
-          userId: session.user.id,
-          name: session.user.name,
-          email: session.user.email,
-        },
-      });
-    } else if (
-      existingMemberProfile.name !== session.user.name ||
-      existingMemberProfile.email !== session.user.email
-    ) {
-      await prisma.member.update({
-        where: {
-          userId: session.user.id,
-        },
-        data: {
-          name: session.user.name,
-          email: session.user.email,
-        },
-      });
-    }
+    await prisma.member.upsert({
+      where: {
+        userId: session.user.id,
+      },
+      create: {
+        userId: session.user.id,
+      },
+      update: {},
+    });
   }
 
   const tokenPayload = {
