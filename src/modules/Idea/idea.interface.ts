@@ -73,6 +73,7 @@ export interface ICreateIdeaMediaPayload {
 }
 
 export interface IRejectIdeaPayload {
+  status?: "REJECTED";
   rejectionFeedback: string;
   adminNote?: string;
 }

@@ -19,9 +19,13 @@ const transporter = nodemailer.createTransport({
 const resolveTemplatePath = (templateName: string) => {
   const templateFile = `${templateName}.ejs`;
   const candidates = [
+    path.join(process.cwd(), "src", "shared", "templates", templateFile),
     path.join(process.cwd(), "src", "templates", templateFile),
+    path.join(process.cwd(), "shared", "templates", templateFile),
     path.join(process.cwd(), "templates", templateFile),
+    path.join(process.cwd(), "dist", "shared", "templates", templateFile),
     path.join(process.cwd(), "dist", "templates", templateFile),
+    path.join(process.cwd(), ".dist", "shared", "templates", templateFile),
     path.join(process.cwd(), ".dist", "templates", templateFile),
   ];
 

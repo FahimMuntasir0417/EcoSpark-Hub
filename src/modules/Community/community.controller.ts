@@ -1,13 +1,26 @@
 import { Request, Response } from "express";
 import status from "http-status";
+import AppError from "../../errors/AppError";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import { CommunityService } from "./community.service";
 
+const getAuthenticatedUserId = (req: Request) => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new AppError(
+      status.UNAUTHORIZED,
+      "Unauthorized access! No authenticated user found.",
+    );
+  }
+
+  return userId;
+};
+
 const createExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = (req as Request & { user?: { userId: string } }).user
-      ?.userId as string;
+    const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.createExperienceReport(
       userId,
@@ -24,14 +37,17 @@ const createExperienceReport = catchAsync(
 );
 
 const getAllExperienceReports = catchAsync(
-  async (_req: Request, res: Response) => {
-    const result = await CommunityService.getAllExperienceReports();
+  async (req: Request, res: Response) => {
+    const result = await CommunityService.getAllExperienceReports(
+      req.query as Record<string, unknown>,
+    );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Experience reports retrieved successfully",
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );
@@ -55,21 +71,22 @@ const getIdeaExperienceReports = catchAsync(
   async (req: Request, res: Response) => {
     const result = await CommunityService.getIdeaExperienceReports(
       req.params.ideaId,
+      req.query as Record<string, unknown>,
     );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Idea experience reports retrieved successfully",
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );
 
 const updateExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = (req as Request & { user?: { userId: string } }).user
-      ?.userId as string;
+    const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.updateExperienceReport(
       req.params.id,
@@ -88,8 +105,7 @@ const updateExperienceReport = catchAsync(
 
 const deleteExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = (req as Request & { user?: { userId: string } }).user
-      ?.userId as string;
+    const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.deleteExperienceReport(
       req.params.id,
@@ -149,23 +165,25 @@ const featureExperienceReport = catchAsync(
 );
 
 const getMyNotifications = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
 
-  const result = await CommunityService.getMyNotifications(userId);
+  const result = await CommunityService.getMyNotifications(
+    userId,
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Notifications retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
 const getSingleNotification = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = (req as Request & { user?: { userId: string } }).user
-      ?.userId as string;
+    const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.getSingleNotification(
       req.params.id,
@@ -182,8 +200,7 @@ const getSingleNotification = catchAsync(
 );
 
 const markNotificationRead = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
 
   const result = await CommunityService.markNotificationRead(
     req.params.id,
@@ -200,8 +217,7 @@ const markNotificationRead = catchAsync(async (req: Request, res: Response) => {
 
 const markAllNotificationsRead = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = (req as Request & { user?: { userId: string } }).user
-      ?.userId as string;
+    const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.markAllNotificationsRead(userId);
 
@@ -215,8 +231,7 @@ const markAllNotificationsRead = catchAsync(
 );
 
 const deleteNotification = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
 
   const result = await CommunityService.deleteNotification(
     req.params.id,
@@ -232,9 +247,7 @@ const deleteNotification = catchAsync(async (req: Request, res: Response) => {
 });
 
 const subscribeNewsletter = catchAsync(async (req: Request, res: Response) => {
-  const userId =
-    ((req as Request & { user?: { userId: string } }).user?.userId as string) ||
-    null;
+  const userId = req.user?.userId ?? null;
 
   const result = await CommunityService.subscribeNewsletter(userId, req.body);
 
@@ -260,14 +273,17 @@ const unsubscribeNewsletter = catchAsync(
 );
 
 const getNewsletterSubscriptions = catchAsync(
-  async (_req: Request, res: Response) => {
-    const result = await CommunityService.getNewsletterSubscriptions();
+  async (req: Request, res: Response) => {
+    const result = await CommunityService.getNewsletterSubscriptions(
+      req.query as Record<string, unknown>,
+    );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Newsletter subscriptions retrieved successfully",
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );

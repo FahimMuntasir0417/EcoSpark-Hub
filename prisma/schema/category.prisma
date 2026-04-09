@@ -24,7 +24,7 @@ model Tag {
   name String @unique
   slug String @unique
 
-  ideaTags IdeaTag[]
+  ideas Idea[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

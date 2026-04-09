@@ -1,6 +1,8 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
+import { TagSearchableFields, TagSortableFields } from "./tag.constant";
 import { ICreateTagPayload, IUpdateTagPayload } from "./tag.interface";
 
 const createTag = async (payload: ICreateTagPayload) => {
@@ -28,12 +30,35 @@ const createTag = async (payload: ICreateTagPayload) => {
   });
 };
 
-const getAllTags = async () => {
-  return prisma.tag.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+const getAllTags = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: TagSearchableFields,
+    sortableFields: TagSortableFields,
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.tag.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+    }),
+    prisma.tag.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleTag = async (id: string) => {
@@ -42,7 +67,7 @@ const getSingleTag = async (id: string) => {
     include: {
       _count: {
         select: {
-          ideaTags: true,
+          ideas: true,
         },
       },
     },
@@ -61,7 +86,7 @@ const getTagBySlug = async (slug: string) => {
     include: {
       _count: {
         select: {
-          ideaTags: true,
+          ideas: true,
         },
       },
     },
@@ -115,7 +140,7 @@ const deleteTag = async (id: string) => {
     include: {
       _count: {
         select: {
-          ideaTags: true,
+          ideas: true,
         },
       },
     },
@@ -125,7 +150,7 @@ const deleteTag = async (id: string) => {
     throw new AppError(status.NOT_FOUND, "Tag not found");
   }
 
-  if (existingTag._count.ideaTags > 0) {
+  if (existingTag._count.ideas > 0) {
     throw new AppError(
       status.BAD_REQUEST,
       "Cannot delete tag because ideas are linked to it",

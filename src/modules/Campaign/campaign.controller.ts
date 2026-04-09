@@ -1,12 +1,20 @@
 import { Request, Response } from "express";
 import status from "http-status";
+import AppError from "../../errors/AppError";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import { CampaignService } from "./campaign.service";
 
 const createCampaign = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new AppError(
+      status.UNAUTHORIZED,
+      "Unauthorized access! No authenticated user found.",
+    );
+  }
+
   const result = await CampaignService.createCampaign(userId, req.body);
 
   sendResponse(res, {
@@ -26,7 +34,8 @@ const getAllCampaigns = catchAsync(async (req: Request, res: Response) => {
     httpStatusCode: status.OK,
     success: true,
     message: "Campaigns retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
@@ -89,13 +98,17 @@ const deleteCampaign = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCampaignIdeas = catchAsync(async (req: Request, res: Response) => {
-  const result = await CampaignService.getCampaignIdeas(req.params.id);
+  const result = await CampaignService.getCampaignIdeas(
+    req.params.id,
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Campaign ideas retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

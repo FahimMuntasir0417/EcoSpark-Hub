@@ -8,7 +8,12 @@ const allowedMimeTypes = [
   "image/jpeg",
   "image/png",
   "image/gif",
+  "image/webp",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
   "application/pdf",
+  "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
@@ -37,8 +42,9 @@ const storage = new CloudinaryStorage({
 
     const uniqueName = `${randomUUID()}-${baseName}`;
 
-    const imageExtensions = ["jpg", "jpeg", "png", "gif"];
-    const docExtensions = ["pdf", "docx"];
+    const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
+    const docExtensions = ["pdf", "doc", "docx"];
+    const videoExtensions = ["mp4", "webm", "mov"];
 
     let folder = "others";
 
@@ -46,6 +52,8 @@ const storage = new CloudinaryStorage({
       folder = "images";
     } else if (docExtensions.includes(extension)) {
       folder = "documents";
+    } else if (videoExtensions.includes(extension)) {
+      folder = "videos";
     }
 
     return {

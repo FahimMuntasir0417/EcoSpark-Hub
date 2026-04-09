@@ -1,6 +1,7 @@
 import status from "http-status";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
+import { UserStatus } from "../../generated/prisma/enums";
 import {
   ICreateIdeaAttachmentPayload,
   ICreateIdeaMediaPayload,
@@ -9,6 +10,7 @@ import {
   IUpdateIdeaPayload,
   IUpdateIdeaTagsPayload,
 } from "./idea.interface";
+import { QueryBuilder } from "../../builder/queryBuilder";
 
 const ideaInclude = {
   author: {
@@ -22,11 +24,7 @@ const ideaInclude = {
   },
   category: true,
   campaign: true,
-  tags: {
-    include: {
-      tag: true,
-    },
-  },
+  tags: true,
   attachments: true,
   media: true,
 } as const;
@@ -88,7 +86,35 @@ const ensureIdeaExists = async (id: string) => {
   return idea;
 };
 
+const ensureAuthorExists = async (authorId: string) => {
+  const normalizedAuthorId = authorId?.trim();
+
+  if (!normalizedAuthorId) {
+    throw new AppError(status.BAD_REQUEST, "Author id is required");
+  }
+
+  const author = await prisma.user.findUnique({
+    where: { id: normalizedAuthorId },
+  });
+
+  if (!author || author.isDeleted) {
+    throw new AppError(status.NOT_FOUND, "Author not found");
+  }
+
+  if (author.status !== UserStatus.ACTIVE) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Only active users can create ideas",
+    );
+  }
+
+  return author;
+};
+
 const createIdea = async (authorId: string, payload: ICreateIdeaPayload) => {
+  const normalizedAuthorId = authorId.trim();
+
+  await ensureAuthorExists(normalizedAuthorId);
   await ensureCategoryExists(payload.categoryId);
   await ensureCampaignExists(payload.campaignId);
   await ensureTagsExist(payload.tagIds);
@@ -101,99 +127,150 @@ const createIdea = async (authorId: string, payload: ICreateIdeaPayload) => {
     throw new AppError(status.CONFLICT, "Idea slug already exists");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const idea = await tx.idea.create({
-      data: {
-        title: payload.title,
-        slug: payload.slug,
-        excerpt: payload.excerpt,
-        problemStatement: payload.problemStatement,
-        proposedSolution: payload.proposedSolution,
-        description: payload.description,
-        implementationSteps: payload.implementationSteps,
-        risksAndChallenges: payload.risksAndChallenges,
-        requiredResources: payload.requiredResources,
-        expectedBenefits: payload.expectedBenefits,
-        targetAudience: payload.targetAudience,
-        coverImageUrl: payload.coverImageUrl,
-        videoUrl: payload.videoUrl,
+  const result = await prisma.idea.create({
+    data: {
+      title: payload.title,
+      slug: payload.slug,
+      excerpt: payload.excerpt,
+      problemStatement: payload.problemStatement,
+      proposedSolution: payload.proposedSolution,
+      description: payload.description,
+      implementationSteps: payload.implementationSteps,
+      risksAndChallenges: payload.risksAndChallenges,
+      requiredResources: payload.requiredResources,
+      expectedBenefits: payload.expectedBenefits,
+      targetAudience: payload.targetAudience,
+      coverImageUrl: payload.coverImageUrl,
+      videoUrl: payload.videoUrl,
 
-        visibility: payload.visibility,
-        accessType: payload.accessType,
-        price: payload.price,
-        currency: payload.currency ?? "USD",
+      visibility: payload.visibility,
+      accessType: payload.accessType,
+      price: payload.price,
+      currency: payload.currency ?? "USD",
 
-        categoryId: payload.categoryId,
-        campaignId: payload.campaignId,
-        authorId,
+      categoryId: payload.categoryId,
+      campaignId: payload.campaignId,
+      authorId: normalizedAuthorId,
 
-        estimatedCost: payload.estimatedCost,
-        implementationEffort: payload.implementationEffort,
-        expectedImpact: payload.expectedImpact,
-        timeToImplementDays: payload.timeToImplementDays,
-        resourceAvailability: payload.resourceAvailability,
-        innovationLevel: payload.innovationLevel,
-        scalabilityScore: payload.scalabilityScore,
+      estimatedCost: payload.estimatedCost,
+      implementationEffort: payload.implementationEffort,
+      expectedImpact: payload.expectedImpact,
+      timeToImplementDays: payload.timeToImplementDays,
+      resourceAvailability: payload.resourceAvailability,
+      innovationLevel: payload.innovationLevel,
+      scalabilityScore: payload.scalabilityScore,
 
-        feasibilityScore: payload.feasibilityScore,
-        impactScore: payload.impactScore,
-        ecoScore: payload.ecoScore,
+      feasibilityScore: payload.feasibilityScore,
+      impactScore: payload.impactScore,
+      ecoScore: payload.ecoScore,
 
-        estimatedWasteReductionKgMonth: payload.estimatedWasteReductionKgMonth,
-        estimatedCo2ReductionKgMonth: payload.estimatedCo2ReductionKgMonth,
-        estimatedCostSavingsMonth: payload.estimatedCostSavingsMonth,
-        estimatedWaterSavedLitersMonth: payload.estimatedWaterSavedLitersMonth,
-        estimatedEnergySavedKwhMonth: payload.estimatedEnergySavedKwhMonth,
+      estimatedWasteReductionKgMonth: payload.estimatedWasteReductionKgMonth,
+      estimatedCo2ReductionKgMonth: payload.estimatedCo2ReductionKgMonth,
+      estimatedCostSavingsMonth: payload.estimatedCostSavingsMonth,
+      estimatedWaterSavedLitersMonth: payload.estimatedWaterSavedLitersMonth,
+      estimatedEnergySavedKwhMonth: payload.estimatedEnergySavedKwhMonth,
 
-        seoTitle: payload.seoTitle,
-        seoDescription: payload.seoDescription,
-        lastActivityAt: new Date(),
-      },
-    });
-
-    if (payload.tagIds?.length) {
-      await tx.ideaTag.createMany({
-        data: payload.tagIds.map((tagId) => ({
-          ideaId: idea.id,
-          tagId,
-        })),
-        skipDuplicates: true,
-      });
-    }
-
-    return tx.idea.findUnique({
-      where: { id: idea.id },
-      include: ideaInclude,
-    });
+      seoTitle: payload.seoTitle,
+      seoDescription: payload.seoDescription,
+      lastActivityAt: new Date(),
+      tags: payload.tagIds?.length
+        ? {
+            connect: payload.tagIds.map((tagId) => ({ id: tagId })),
+          }
+        : undefined,
+    },
+    include: ideaInclude,
   });
 
   return result;
 };
 
+// const getAllIdeas = async (query: Record<string, unknown>) => {
+//   const where: Record<string, unknown> = {
+//     deletedAt: null,
+//   };
+
+//   if (query.status) where.status = query.status;
+//   if (query.categoryId) where.categoryId = query.categoryId;
+//   if (query.campaignId) where.campaignId = query.campaignId;
+//   if (query.authorId) where.authorId = query.authorId;
+//   if (query.accessType) where.accessType = query.accessType;
+
+//   if (query.featured === "true") {
+//     where.isFeatured = true;
+//   }
+
+//   const ideas = await prisma.idea.findMany({
+//     where,
+//     include: ideaInclude,
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   });
+
+//   return ideas;
+// };
+
 const getAllIdeas = async (query: Record<string, unknown>) => {
-  const where: Record<string, unknown> = {
-    deletedAt: null,
-  };
-
-  if (query.status) where.status = query.status;
-  if (query.categoryId) where.categoryId = query.categoryId;
-  if (query.campaignId) where.campaignId = query.campaignId;
-  if (query.authorId) where.authorId = query.authorId;
-  if (query.accessType) where.accessType = query.accessType;
-
-  if (query.featured === "true") {
-    where.isFeatured = true;
-  }
-
-  const ideas = await prisma.idea.findMany({
-    where,
-    include: ideaInclude,
-    orderBy: {
-      createdAt: "desc",
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: [
+      "title",
+      "excerpt",
+      "description",
+      "problemStatement",
+      "proposedSolution",
+    ],
+    filterableFields: [
+      "status",
+      "categoryId",
+      "campaignId",
+      "authorId",
+      "accessType",
+      "visibility",
+      "isFeatured",
+    ],
+    sortableFields: [
+      "createdAt",
+      "updatedAt",
+      "publishedAt",
+      "submittedAt",
+      "ecoScore",
+      "trendingScore",
+      "totalViews",
+    ],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
+      deletedAt: null,
     },
   });
 
-  return ideas;
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.idea.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+      include: {
+        author: true,
+        category: true,
+        campaign: true,
+      },
+    }),
+    prisma.idea.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleIdea = async (id: string) => {
@@ -242,6 +319,7 @@ const getIdeaBySlug = async (slug: string) => {
 
 const updateIdea = async (id: string, payload: IUpdateIdeaPayload) => {
   const existingIdea = await ensureIdeaExists(id);
+  const { tagIds, ...ideaData } = payload;
 
   if (payload.categoryId) {
     await ensureCategoryExists(payload.categoryId);
@@ -268,7 +346,14 @@ const updateIdea = async (id: string, payload: IUpdateIdeaPayload) => {
   const updatedIdea = await prisma.idea.update({
     where: { id },
     data: {
-      ...payload,
+      ...ideaData,
+      ...(tagIds
+        ? {
+            tags: {
+              set: tagIds.map((tagId) => ({ id: tagId })),
+            },
+          }
+        : {}),
       lastActivityAt: new Date(),
     },
     include: ideaInclude,
@@ -359,12 +444,20 @@ const rejectIdea = async (
   payload: IRejectIdeaPayload,
 ) => {
   const idea = await ensureIdeaExists(id);
+  const targetStatus = payload.status ?? "REJECTED";
+
+  if (targetStatus !== "REJECTED") {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Invalid status for reject endpoint. Use REJECTED only.",
+    );
+  }
 
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.idea.update({
       where: { id },
       data: {
-        status: "REJECTED",
+        status: targetStatus,
         rejectionFeedback: payload.rejectionFeedback,
         adminNote: payload.adminNote,
         reviewedAt: new Date(),
@@ -378,7 +471,7 @@ const rejectIdea = async (
         ideaId: id,
         actorId,
         fromStatus: idea.status,
-        toStatus: "REJECTED",
+        toStatus: targetStatus,
         note: payload.rejectionFeedback,
       },
     });
@@ -470,25 +563,15 @@ const updateIdeaTags = async (id: string, payload: IUpdateIdeaTagsPayload) => {
   await ensureIdeaExists(id);
   await ensureTagsExist(payload.tagIds);
 
-  const result = await prisma.$transaction(async (tx) => {
-    await tx.ideaTag.deleteMany({
-      where: { ideaId: id },
-    });
-
-    if (payload.tagIds.length) {
-      await tx.ideaTag.createMany({
-        data: payload.tagIds.map((tagId) => ({
-          ideaId: id,
-          tagId,
-        })),
-        skipDuplicates: true,
-      });
-    }
-
-    return tx.idea.findUnique({
-      where: { id },
-      include: ideaInclude,
-    });
+  const result = await prisma.idea.update({
+    where: { id },
+    data: {
+      tags: {
+        set: payload.tagIds.map((tagId) => ({ id: tagId })),
+      },
+      lastActivityAt: new Date(),
+    },
+    include: ideaInclude,
   });
 
   return result;

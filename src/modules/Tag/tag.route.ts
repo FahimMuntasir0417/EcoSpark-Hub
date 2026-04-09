@@ -1,9 +1,11 @@
 import express from "express";
-import { TagController } from "./tag.controller";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
+import { TagController } from "./tag.controller";
 import { createTagSchema, updateTagSchema } from "./tag.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post("/", validateRequest(createTagSchema), TagController.createTag);
 

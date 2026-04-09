@@ -1,4 +1,5 @@
 import express from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { InteractionController } from "./interaction.controller";
 import {
@@ -8,6 +9,7 @@ import {
 } from "./interaction.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post(
   "/ideas/:ideaId/votes",
@@ -29,7 +31,10 @@ router.post(
   InteractionController.createComment,
 );
 
-router.get("/ideas/:ideaId/comments", InteractionController.getIdeaComments);
+router.get(
+  "/ideas/:ideaId/comments",
+  InteractionController.getIdeaComments,
+);
 
 router.patch(
   "/comments/:id",
@@ -45,7 +50,10 @@ router.post(
   InteractionController.replyToComment,
 );
 
-router.get("/comments/:id/replies", InteractionController.getCommentReplies);
+router.get(
+  "/comments/:id/replies",
+  InteractionController.getCommentReplies,
+);
 
 router.post("/ideas/:ideaId/bookmark", InteractionController.bookmarkIdea);
 router.delete("/ideas/:ideaId/bookmark", InteractionController.removeBookmark);

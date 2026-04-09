@@ -1,4 +1,5 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import {
@@ -110,13 +111,37 @@ const createExperienceReport = async (
   return report;
 };
 
-const getAllExperienceReports = async () => {
-  return prisma.experienceReport.findMany({
-    include: experienceReportInclude,
-    orderBy: {
-      createdAt: "desc",
-    },
+const getAllExperienceReports = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "summary", "outcome", "challenges", "location"],
+    filterableFields: ["status", "isFeatured", "authorId", "ideaId"],
+    sortableFields: ["createdAt", "updatedAt", "effectivenessRating"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.experienceReport.findMany({
+      where,
+      skip,
+      take,
+      include: experienceReportInclude,
+      orderBy,
+    }),
+    prisma.experienceReport.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleExperienceReport = async (id: string) => {
@@ -132,18 +157,45 @@ const getSingleExperienceReport = async (id: string) => {
   return report;
 };
 
-const getIdeaExperienceReports = async (ideaId: string) => {
+const getIdeaExperienceReports = async (
+  ideaId: string,
+  query: Record<string, unknown>,
+) => {
   await ensureIdeaExists(ideaId);
 
-  return prisma.experienceReport.findMany({
-    where: {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "summary", "outcome", "challenges", "location"],
+    filterableFields: ["status", "isFeatured", "authorId"],
+    sortableFields: ["createdAt", "updatedAt", "effectivenessRating"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
       ideaId,
     },
-    include: experienceReportInclude,
-    orderBy: {
-      createdAt: "desc",
-    },
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.experienceReport.findMany({
+      where,
+      skip,
+      take,
+      include: experienceReportInclude,
+      orderBy,
+    }),
+    prisma.experienceReport.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const updateExperienceReport = async (
@@ -225,16 +277,43 @@ const featureExperienceReport = async (id: string) => {
   });
 };
 
-const getMyNotifications = async (userId: string) => {
-  return prisma.notification.findMany({
-    where: {
+const getMyNotifications = async (
+  userId: string,
+  query: Record<string, unknown>,
+) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "message"],
+    filterableFields: ["type", "isRead"],
+    sortableFields: ["createdAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
       userId,
     },
-    include: notificationInclude,
-    orderBy: {
-      createdAt: "desc",
-    },
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.notification.findMany({
+      where,
+      skip,
+      take,
+      include: notificationInclude,
+      orderBy,
+    }),
+    prisma.notification.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleNotification = async (id: string, userId: string) => {
@@ -376,22 +455,46 @@ const unsubscribeNewsletter = async (
   });
 };
 
-const getNewsletterSubscriptions = async () => {
-  return prisma.newsletterSubscription.findMany({
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
+const getNewsletterSubscriptions = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["email", "source"],
+    filterableFields: ["isActive", "userId"],
+    sortableFields: ["subscribedAt", "unsubscribedAt"],
+    defaultSortBy: "subscribedAt",
+    defaultSortOrder: "desc",
+  });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.newsletterSubscription.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
         },
       },
+      orderBy,
+    }),
+    prisma.newsletterSubscription.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
     },
-    orderBy: {
-      subscribedAt: "desc",
-    },
-  });
+    data,
+  };
 };
 
 export const CommunityService = {

@@ -1,4 +1,5 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import {
@@ -70,23 +71,36 @@ const createCampaign = async (
 };
 
 const getAllCampaigns = async (query: Record<string, unknown>) => {
-  const where: Record<string, unknown> = {};
-
-  if (query.isActive === "true") where.isActive = true;
-  if (query.isActive === "false") where.isActive = false;
-
-  if (query.isPublic === "true") where.isPublic = true;
-  if (query.isPublic === "false") where.isPublic = false;
-
-  const campaigns = await prisma.campaign.findMany({
-    where,
-    include: campaignInclude,
-    orderBy: {
-      createdAt: "desc",
-    },
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "slug", "description", "goalText"],
+    filterableFields: ["isActive", "isPublic", "createdById"],
+    sortableFields: ["createdAt", "updatedAt", "startDate", "endDate", "title"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
 
-  return campaigns;
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.campaign.findMany({
+      where,
+      skip,
+      take,
+      include: campaignInclude,
+      orderBy,
+    }),
+    prisma.campaign.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleCampaign = async (id: string) => {
@@ -211,47 +225,76 @@ const deleteCampaign = async (id: string) => {
   };
 };
 
-const getCampaignIdeas = async (id: string) => {
+const getCampaignIdeas = async (id: string, query: Record<string, unknown>) => {
   await ensureCampaignExists(id);
 
-  const ideas = await prisma.idea.findMany({
-    where: {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "slug", "excerpt"],
+    filterableFields: [
+      "status",
+      "visibility",
+      "accessType",
+      "isFeatured",
+      "authorId",
+      "categoryId",
+    ],
+    sortableFields: ["createdAt", "updatedAt", "publishedAt", "title"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
       campaignId: id,
       deletedAt: null,
     },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      status: true,
-      visibility: true,
-      accessType: true,
-      isFeatured: true,
-      publishedAt: true,
-      createdAt: true,
-      author: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-        },
-      },
-      category: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
   });
 
-  return ideas;
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.idea.findMany({
+      where,
+      skip,
+      take,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        status: true,
+        visibility: true,
+        accessType: true,
+        isFeatured: true,
+        publishedAt: true,
+        createdAt: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+      orderBy,
+    }),
+    prisma.idea.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 export const CampaignService = {

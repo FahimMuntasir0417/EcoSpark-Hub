@@ -1,14 +1,24 @@
 import { Request, Response } from "express";
 import status from "http-status";
+import AppError from "../../errors/AppError";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import { InteractionService } from "./interaction.service";
 
+const getAuthenticatedUserId = (req: Request) => {
+  const userId = (req as Request & { user?: { userId?: string } }).user?.userId;
+
+  if (!userId) {
+    throw new AppError(status.UNAUTHORIZED, "Unauthorized access! Please log in.");
+  }
+
+  return userId;
+};
+
 const voteIdea = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.voteIdea(
-    req.params.ideaId,
+    req.params.ideaId as string,
     userId,
     req.body,
   );
@@ -22,10 +32,9 @@ const voteIdea = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateVote = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.updateVote(
-    req.params.ideaId,
+    req.params.ideaId as string,
     userId,
     req.body,
   );
@@ -39,9 +48,11 @@ const updateVote = catchAsync(async (req: Request, res: Response) => {
 });
 
 const removeVote = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
-  const result = await InteractionService.removeVote(req.params.ideaId, userId);
+  const userId = getAuthenticatedUserId(req);
+  const result = await InteractionService.removeVote(
+    req.params.ideaId as string,
+    userId,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -52,10 +63,9 @@ const removeVote = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createComment = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.createComment(
-    req.params.ideaId,
+    req.params.ideaId as string,
     userId,
     req.body,
   );
@@ -69,21 +79,24 @@ const createComment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getIdeaComments = catchAsync(async (req: Request, res: Response) => {
-  const result = await InteractionService.getIdeaComments(req.params.ideaId);
+  const result = await InteractionService.getIdeaComments(
+    req.params.ideaId as string,
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Comments retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
 const updateComment = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.updateComment(
-    req.params.id,
+    req.params.id as string,
     userId,
     req.body,
   );
@@ -97,9 +110,11 @@ const updateComment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteComment = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
-  const result = await InteractionService.deleteComment(req.params.id, userId);
+  const userId = getAuthenticatedUserId(req);
+  const result = await InteractionService.deleteComment(
+    req.params.id as string,
+    userId,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -110,10 +125,9 @@ const deleteComment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const replyToComment = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.replyToComment(
-    req.params.id,
+    req.params.id as string,
     userId,
     req.body,
   );
@@ -127,21 +141,24 @@ const replyToComment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCommentReplies = catchAsync(async (req: Request, res: Response) => {
-  const result = await InteractionService.getCommentReplies(req.params.id);
+  const result = await InteractionService.getCommentReplies(
+    req.params.id as string,
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Replies retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
 const bookmarkIdea = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.bookmarkIdea(
-    req.params.ideaId,
+    req.params.ideaId as string,
     userId,
   );
 
@@ -154,10 +171,9 @@ const bookmarkIdea = catchAsync(async (req: Request, res: Response) => {
 });
 
 const removeBookmark = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
+  const userId = getAuthenticatedUserId(req);
   const result = await InteractionService.removeBookmark(
-    req.params.ideaId,
+    req.params.ideaId as string,
     userId,
   );
 
@@ -170,15 +186,18 @@ const removeBookmark = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyBookmarks = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as Request & { user?: { userId: string } }).user
-    ?.userId as string;
-  const result = await InteractionService.getMyBookmarks(userId);
+  const userId = getAuthenticatedUserId(req);
+  const result = await InteractionService.getMyBookmarks(
+    userId,
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Bookmarks retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

@@ -11,11 +11,12 @@ const createScientist = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     httpStatusCode: status.CREATED,
     success: true,
-    message: "Scientist created successfully",
+    message: "Member promoted to scientist successfully",
     data: result,
   });
 });
 
+/*
 const getAllScientists = catchAsync(async (_req: Request, res: Response) => {
   const result = await ScientistService.getAllScientists();
 
@@ -27,9 +28,26 @@ const getAllScientists = catchAsync(async (_req: Request, res: Response) => {
   });
 });
 
+*/
+
+const getAllScientists = catchAsync(async (req: Request, res: Response) => {
+  const result = await ScientistService.getAllScientists(
+    req.query as Record<string, unknown>,
+  );
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Scientists retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 const getSingleScientist = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const result = await ScientistService.getSingleScientist(id);
+  const result = await ScientistService.getSingleScientist(
+    req.params.id as string,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -40,8 +58,9 @@ const getSingleScientist = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getScientistByUserId = catchAsync(async (req: Request, res: Response) => {
-  const { userId } = req.params as { userId: string };
-  const result = await ScientistService.getScientistByUserId(userId);
+  const result = await ScientistService.getScientistByUserId(
+    req.params.userId as string,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -52,8 +71,10 @@ const getScientistByUserId = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateScientist = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const result = await ScientistService.updateScientist(id, req.body);
+  const result = await ScientistService.updateScientist(
+    req.params.id as string,
+    req.body,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -65,9 +86,8 @@ const updateScientist = catchAsync(async (req: Request, res: Response) => {
 
 const assignScientistSpecialties = catchAsync(
   async (req: Request, res: Response) => {
-    const { id } = req.params as { id: string };
     const result = await ScientistService.assignScientistSpecialties(
-      id,
+      req.params.id as string,
       req.body,
     );
 
@@ -82,34 +102,46 @@ const assignScientistSpecialties = catchAsync(
 
 const removeScientistSpecialty = catchAsync(
   async (req: Request, res: Response) => {
-    const { id, specialtyId } = req.params as {
-      id: string;
-      specialtyId: string;
-    };
-
-    const result = await ScientistService.removeScientistSpecialty(
-      id,
-      specialtyId,
+    await ScientistService.removeScientistSpecialty(
+      req.params.id as string,
+      req.params.specialtyId as string,
     );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Scientist specialty removed successfully",
-      data: result,
+      data: null,
     });
   },
 );
 
-const deleteScientist = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const result = await ScientistService.deleteScientist(id);
+const verifyScientist = catchAsync(async (req: Request, res: Response) => {
+  const actorId = (req as Request & { user?: { userId: string } }).user
+    ?.userId as string;
+
+  const result = await ScientistService.verifyScientist(
+    req.params.id as string,
+    actorId,
+    req.body,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
-    message: "Scientist deleted successfully",
+    message: "Scientist verification updated successfully",
     data: result,
+  });
+});
+
+const deleteScientist = catchAsync(async (req: Request, res: Response) => {
+  await ScientistService.deleteScientist(req.params.id as string);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Scientist demoted to member successfully",
+    data: null,
   });
 });
 
@@ -121,5 +153,6 @@ export const ScientistController = {
   updateScientist,
   assignScientistSpecialties,
   removeScientistSpecialty,
+  verifyScientist,
   deleteScientist,
 };

@@ -1,4 +1,5 @@
 import express from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { ModerationController } from "./moderation.controller";
 import {
@@ -11,6 +12,7 @@ import {
 } from "./moderation.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post(
   "/ideas/:ideaId/reports",

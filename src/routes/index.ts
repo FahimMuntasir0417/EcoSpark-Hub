@@ -9,8 +9,10 @@ import { InteractionRoutes } from "../modules/Interaction/interaction.route";
 import { ModerationRoutes } from "../modules/Moderation/moderation.route";
 import { CommerceRoutes } from "../modules/Commerce/commerce.route";
 import { CommunityRoutes } from "../modules/Community/community.route";
+import { UserRoutes } from "../modules/User/user.route";
 
 import { CategoryRoutes } from "../modules/Category/category.route";
+import { TagRoutes } from "../modules/Tag/tag.route";
 
 const router = express.Router();
 
@@ -58,6 +60,10 @@ const moduleRoutes = [
   {
     path: "/community",
     route: CommunityRoutes,
+  },
+  {
+    path: "/users",
+    route: UserRoutes,
   },
 ];
 

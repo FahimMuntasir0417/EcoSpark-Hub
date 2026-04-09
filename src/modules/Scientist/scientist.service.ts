@@ -1,36 +1,61 @@
 import status from "http-status";
-import { Role } from "../../generated/prisma/enums";
 
 import AppError from "../../errors/AppError";
-import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import { Role, UserStatus } from "../../generated/prisma/enums";
 import {
   IAssignScientistSpecialtiesPayload,
   ICreateScientistPayload,
   IUpdateScientistPayload,
+  IVerifyScientistPayload,
 } from "./scientist.interface";
+import { QueryBuilder } from "../../builder/queryBuilder";
 
-const scientistInclude = {
+const scientistSelect = {
+  id: true,
+  userId: true,
+  profilePhoto: true,
+  contactNumber: true,
+  address: true,
+  isDeleted: true,
+  deletedAt: true,
+  institution: true,
+  department: true,
+  specialization: true,
+  researchInterests: true,
+  yearsOfExperience: true,
+  qualification: true,
+  linkedinUrl: true,
+  googleScholarUrl: true,
+  orcid: true,
+  verifiedAt: true,
+  verifiedById: true,
+  createdAt: true,
+  updatedAt: true,
   user: {
     select: {
       id: true,
-      email: true,
       name: true,
+      email: true,
       role: true,
       status: true,
       emailVerified: true,
+      image: true,
+      isDeleted: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
     },
   },
-  scientistSpecialties: {
-    where: {
-      specialty: {
-        is: {
-          isDeleted: false,
-        },
-      },
+  verifiedBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
     },
+  },
+  scientistSpecialties: {
     select: {
       specialty: {
         select: {
@@ -44,54 +69,77 @@ const scientistInclude = {
   },
 } as const;
 
-const createScientist = async (payload: ICreateScientistPayload) => {
-  const {
-    name,
-    email,
-    ...scientistProfileData
-  } = payload.scientist;
+const ensureScientistExists = async (id: string) => {
+  const scientist = await prisma.scientist.findUnique({
+    where: { id },
+  });
 
-  const specialties: Array<{ id: string }> = [];
-
-  for (const specialtyId of payload.specialties) {
-    const specialty = await prisma.specialty.findUnique({
-      where: {
-        id: specialtyId,
-      },
-      select: {
-        id: true,
-        isDeleted: true,
-      },
-    });
-
-    if (!specialty || specialty.isDeleted) {
-      throw new AppError(
-        status.NOT_FOUND,
-        `Specialty with id ${specialtyId} not found`,
-      );
-    }
-
-    specialties.push({ id: specialty.id });
+  if (!scientist || scientist.isDeleted) {
+    throw new AppError(status.NOT_FOUND, "Scientist not found");
   }
 
-  const userExists = await prisma.user.findUnique({
+  return scientist;
+};
+
+const ensureSpecialtiesExist = async (specialtyIds: string[]) => {
+  if (!specialtyIds.length) return [];
+
+  const specialties = await prisma.specialty.findMany({
     where: {
-      email,
+      id: { in: specialtyIds },
+      isDeleted: false,
     },
   });
 
-  if (userExists) {
-    throw new AppError(status.CONFLICT, "User with this email already exists");
+  if (specialties.length !== specialtyIds.length) {
+    throw new AppError(status.NOT_FOUND, "One or more specialties not found");
   }
 
-  if (scientistProfileData.orcid) {
-    const orcidExists = await prisma.scientist.findFirst({
+  return specialties;
+};
+
+const createScientist = async (payload: ICreateScientistPayload) => {
+  const { userId, scientist, specialtyIds = [] } = payload;
+
+  await ensureSpecialtiesExist(specialtyIds);
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      member: true,
+      scientist: true,
+    },
+  });
+
+  if (!user || user.isDeleted) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+
+  if (user.status !== UserStatus.ACTIVE) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Only active users can become scientists",
+    );
+  }
+
+  if (user.role !== Role.MEMBER) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Only members can be promoted to scientist",
+    );
+  }
+
+  if (scientist.orcid) {
+    const existingOrcid = await prisma.scientist.findFirst({
       where: {
-        orcid: scientistProfileData.orcid,
+        orcid: scientist.orcid,
+        NOT: {
+          userId,
+        },
       },
     });
 
-    if (orcidExists) {
+    if (existingOrcid) {
       throw new AppError(
         status.CONFLICT,
         "Scientist with this ORCID already exists",
@@ -99,77 +147,200 @@ const createScientist = async (payload: ICreateScientistPayload) => {
     }
   }
 
-  const userData = await auth.api.signUpEmail({
-    body: {
-      email,
-      password: payload.password,
-      role: Role.SCIENTIST,
-      name,
-      needPasswordChange: true,
-    },
+  const existingScientist = await prisma.scientist.findUnique({
+    where: { userId },
   });
 
-  if (!userData?.user) {
-    throw new AppError(status.BAD_REQUEST, "Failed to create scientist user");
-  }
-
-  try {
-    const result = await prisma.$transaction(async (tx) => {
-      const scientistData = await tx.scientist.create({
-        data: {
-          userId: userData.user.id,
-          ...scientistProfileData,
-        },
+  const result = await prisma.$transaction(async (tx) => {
+    if (!user.member) {
+      await tx.member.upsert({
+        where: { userId },
+        create: { userId },
+        update: {},
       });
+    }
 
-      const scientistSpecialtyData = specialties.map((specialty) => ({
-        scientistId: scientistData.id,
-        specialtyId: specialty.id,
-      }));
+    let scientistData;
 
-      if (scientistSpecialtyData.length > 0) {
-        await tx.scientistSpecialty.createMany({
-          data: scientistSpecialtyData,
-          skipDuplicates: true,
-        });
+    if (existingScientist) {
+      if (!existingScientist.isDeleted) {
+        throw new AppError(
+          status.CONFLICT,
+          "This member is already a scientist",
+        );
       }
 
-      const scientist = await tx.scientist.findUnique({
-        where: {
-          id: scientistData.id,
+      scientistData = await tx.scientist.update({
+        where: { userId },
+        data: {
+          profilePhoto: scientist.profilePhoto,
+          contactNumber: scientist.contactNumber,
+          address: scientist.address,
+          institution: scientist.institution,
+          department: scientist.department,
+          specialization: scientist.specialization,
+          researchInterests: scientist.researchInterests,
+          yearsOfExperience: scientist.yearsOfExperience,
+          qualification: scientist.qualification,
+          linkedinUrl: scientist.linkedinUrl,
+          googleScholarUrl: scientist.googleScholarUrl,
+          orcid: scientist.orcid,
+          isDeleted: false,
+          deletedAt: null,
+          verifiedAt: null,
+          verifiedById: null,
         },
-        include: scientistInclude,
       });
 
-      return scientist;
-    });
+      await tx.scientistSpecialty.deleteMany({
+        where: {
+          scientistId: scientistData.id,
+        },
+      });
+    } else {
+      scientistData = await tx.scientist.create({
+        data: {
+          userId,
+          profilePhoto: scientist.profilePhoto,
+          contactNumber: scientist.contactNumber,
+          address: scientist.address,
+          institution: scientist.institution,
+          department: scientist.department,
+          specialization: scientist.specialization,
+          researchInterests: scientist.researchInterests,
+          yearsOfExperience: scientist.yearsOfExperience,
+          qualification: scientist.qualification,
+          linkedinUrl: scientist.linkedinUrl,
+          googleScholarUrl: scientist.googleScholarUrl,
+          orcid: scientist.orcid,
+        },
+      });
+    }
 
-    return result;
-  } catch (error) {
-    console.log("Transaction error:", error);
+    if (specialtyIds.length) {
+      await tx.scientistSpecialty.createMany({
+        data: specialtyIds.map((specialtyId) => ({
+          scientistId: scientistData.id,
+          specialtyId,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
-    await prisma.user.deleteMany({
-      where: {
-        id: userData.user.id,
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        role: Role.SCIENTIST,
       },
     });
 
-    throw error;
-  }
+    return tx.scientist.findUnique({
+      where: {
+        id: scientistData.id,
+      },
+      select: scientistSelect,
+    });
+  });
+
+  return result;
 };
 
+/*
 const getAllScientists = async () => {
-  const scientists = await prisma.scientist.findMany({
+  return prisma.scientist.findMany({
     where: {
       isDeleted: false,
+      user: {
+        isDeleted: false,
+      },
     },
-    include: scientistInclude,
+    select: scientistSelect,
     orderBy: {
       createdAt: "desc",
     },
   });
+};
+*/
 
-  return scientists;
+const getAllScientists = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: [
+      "user.name",
+      "user.email",
+      "institution",
+      "department",
+      "specialization",
+      "researchInterests",
+      "qualification",
+    ],
+    filterableFields: [
+      "verifiedById",
+      "institution",
+      "department",
+      "specialization",
+    ],
+    sortableFields: [
+      "createdAt",
+      "updatedAt",
+      "yearsOfExperience",
+      "verifiedAt",
+    ],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
+      isDeleted: false,
+      user: {
+        isDeleted: false,
+      },
+    },
+  });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.scientist.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+      select: {
+        id: true,
+        userId: true,
+        institution: true,
+        department: true,
+        specialization: true,
+        researchInterests: true,
+        yearsOfExperience: true,
+        qualification: true,
+        verifiedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+          },
+        },
+        scientistSpecialties: {
+          select: {
+            specialty: true,
+          },
+        },
+      },
+    }),
+    prisma.scientist.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleScientist = async (id: string) => {
@@ -177,8 +348,11 @@ const getSingleScientist = async (id: string) => {
     where: {
       id,
       isDeleted: false,
+      user: {
+        isDeleted: false,
+      },
     },
-    include: scientistInclude,
+    select: scientistSelect,
   });
 
   if (!scientist) {
@@ -193,8 +367,11 @@ const getScientistByUserId = async (userId: string) => {
     where: {
       userId,
       isDeleted: false,
+      user: {
+        isDeleted: false,
+      },
     },
-    include: scientistInclude,
+    select: scientistSelect,
   });
 
   if (!scientist) {
@@ -208,244 +385,141 @@ const updateScientist = async (
   id: string,
   payload: IUpdateScientistPayload,
 ) => {
-  const {
-    name,
-    email,
-    ...scientistUpdateData
-  } = payload;
+  const existingScientist = await ensureScientistExists(id);
 
-  const existingScientist = await prisma.scientist.findFirst({
-    where: {
-      id,
-      isDeleted: false,
-    },
-    select: {
-      id: true,
-      userId: true,
-      orcid: true,
-    },
-  });
-
-  if (!existingScientist) {
-    throw new AppError(status.NOT_FOUND, "Scientist not found");
-  }
-
-  if (email) {
-    const userByEmail = await prisma.user.findFirst({
+  if (payload.orcid && payload.orcid !== existingScientist.orcid) {
+    const existingOrcid = await prisma.scientist.findFirst({
       where: {
-        email,
-        NOT: {
-          id: existingScientist.userId,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (userByEmail) {
-      throw new AppError(
-        status.CONFLICT,
-        "User with this email already exists",
-      );
-    }
-  }
-
-  if (
-    scientistUpdateData.orcid &&
-    scientistUpdateData.orcid !== existingScientist.orcid
-  ) {
-    const scientistByOrcid = await prisma.scientist.findFirst({
-      where: {
-        orcid: scientistUpdateData.orcid,
+        orcid: payload.orcid,
         NOT: {
           id,
         },
       },
     });
 
-    if (scientistByOrcid) {
-      throw new AppError(status.CONFLICT, "ORCID already exists");
+    if (existingOrcid) {
+      throw new AppError(
+        status.CONFLICT,
+        "Scientist with this ORCID already exists",
+      );
     }
   }
 
-  if (scientistUpdateData.verifiedById) {
-    const verifier = await prisma.user.findUnique({
-      where: {
-        id: scientistUpdateData.verifiedById,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!verifier) {
-      throw new AppError(status.BAD_REQUEST, "Invalid verifiedById");
-    }
-  }
-
-  const updatedScientist = await prisma.$transaction(async (tx) => {
-    await tx.scientist.update({
-      where: {
-        id,
-      },
-      data: {
-        ...scientistUpdateData,
-        verifiedAt: scientistUpdateData.verifiedById ? new Date() : undefined,
-      },
-    });
-
-    const userData: { name?: string; email?: string } = {};
-
-    if (name !== undefined) {
-      userData.name = name;
-    }
-
-    if (email !== undefined) {
-      userData.email = email;
-    }
-
-    if (Object.keys(userData).length > 0) {
-      await tx.user.update({
-        where: {
-          id: existingScientist.userId,
-        },
-        data: userData,
-      });
-    }
-
-    const scientist = await tx.scientist.findUnique({
-      where: {
-        id,
-      },
-      include: scientistInclude,
-    });
-
-    if (!scientist) {
-      throw new AppError(status.NOT_FOUND, "Scientist not found");
-    }
-
-    return scientist;
+  return prisma.scientist.update({
+    where: { id },
+    data: payload,
+    select: scientistSelect,
   });
-
-  return updatedScientist;
 };
 
 const assignScientistSpecialties = async (
-  scientistId: string,
+  id: string,
   payload: IAssignScientistSpecialtiesPayload,
 ) => {
-  const scientist = await prisma.scientist.findFirst({
-    where: {
-      id: scientistId,
-      isDeleted: false,
-    },
-  });
+  await ensureScientistExists(id);
+  await ensureSpecialtiesExist(payload.specialtyIds);
 
-  if (!scientist) {
-    throw new AppError(status.NOT_FOUND, "Scientist not found");
-  }
-
-  const specialties = await prisma.specialty.findMany({
-    where: {
-      id: {
-        in: payload.specialtyIds,
+  return prisma.$transaction(async (tx) => {
+    await tx.scientistSpecialty.deleteMany({
+      where: {
+        scientistId: id,
       },
-      isDeleted: false,
-    },
-    select: {
-      id: true,
-    },
+    });
+
+    await tx.scientistSpecialty.createMany({
+      data: payload.specialtyIds.map((specialtyId) => ({
+        scientistId: id,
+        specialtyId,
+      })),
+      skipDuplicates: true,
+    });
+
+    return tx.scientist.findUnique({
+      where: { id },
+      select: scientistSelect,
+    });
   });
-
-  if (specialties.length !== payload.specialtyIds.length) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "One or more specialties are invalid or deleted",
-    );
-  }
-
-  await prisma.scientistSpecialty.createMany({
-    data: payload.specialtyIds.map((specialtyId) => ({
-      scientistId,
-      specialtyId,
-    })),
-    skipDuplicates: true,
-  });
-
-  const updatedScientist = await prisma.scientist.findUnique({
-    where: {
-      id: scientistId,
-    },
-    include: scientistInclude,
-  });
-
-  return updatedScientist;
 };
 
-const removeScientistSpecialty = async (
-  scientistId: string,
-  specialtyId: string,
-) => {
-  const relation = await prisma.scientistSpecialty.findUnique({
+const removeScientistSpecialty = async (id: string, specialtyId: string) => {
+  await ensureScientistExists(id);
+
+  const existingRelation = await prisma.scientistSpecialty.findUnique({
     where: {
       scientistId_specialtyId: {
-        scientistId,
+        scientistId: id,
         specialtyId,
       },
     },
   });
 
-  if (!relation) {
+  if (!existingRelation) {
     throw new AppError(
       status.NOT_FOUND,
-      "Specialty is not assigned to this scientist",
+      "Scientist specialty relation not found",
     );
   }
 
   await prisma.scientistSpecialty.delete({
     where: {
       scientistId_specialtyId: {
-        scientistId,
+        scientistId: id,
         specialtyId,
       },
     },
   });
 
-  const updatedScientist = await prisma.scientist.findUnique({
-    where: {
-      id: scientistId,
-    },
-    include: scientistInclude,
-  });
+  return null;
+};
 
-  return updatedScientist;
+const verifyScientist = async (
+  id: string,
+  actorId: string,
+  payload: IVerifyScientistPayload,
+) => {
+  await ensureScientistExists(id);
+
+  return prisma.scientist.update({
+    where: { id },
+    data: {
+      verifiedAt: payload.verified ? new Date() : null,
+      verifiedById: payload.verified ? actorId : null,
+    },
+    select: scientistSelect,
+  });
 };
 
 const deleteScientist = async (id: string) => {
-  const scientist = await prisma.scientist.findFirst({
-    where: {
-      id,
-      isDeleted: false,
-    },
+  const existingScientist = await ensureScientistExists(id);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.scientist.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        verifiedAt: null,
+        verifiedById: null,
+      },
+    });
+
+    await tx.scientistSpecialty.deleteMany({
+      where: {
+        scientistId: id,
+      },
+    });
+
+    await tx.user.update({
+      where: {
+        id: existingScientist.userId,
+      },
+      data: {
+        role: Role.MEMBER,
+      },
+    });
+
+    return null;
   });
-
-  if (!scientist) {
-    throw new AppError(status.NOT_FOUND, "Scientist not found");
-  }
-
-  const deletedScientist = await prisma.scientist.update({
-    where: {
-      id,
-    },
-    data: {
-      isDeleted: true,
-      deletedAt: new Date(),
-    },
-    include: scientistInclude,
-  });
-
-  return deletedScientist;
 };
 
 export const ScientistService = {
@@ -456,5 +530,6 @@ export const ScientistService = {
   updateScientist,
   assignScientistSpecialties,
   removeScientistSpecialty,
+  verifyScientist,
   deleteScientist,
 };

@@ -2,10 +2,9 @@ import { z } from "zod";
 
 const visibilityEnum = z.enum(["PUBLIC", "PRIVATE", "UNLISTED"]);
 const accessTypeEnum = z.enum(["FREE", "PAID", "MEMBERS_ONLY"]);
-const attachmentTypeEnum = z.enum(["PDF", "DOC", "IMAGE", "VIDEO", "OTHER"]);
 const mediaTypeEnum = z.enum(["IMAGE", "VIDEO"]);
 
-export const createIdeaSchema = z
+const ideaBaseSchema = z
   .object({
     title: z.string().trim().min(1, "Title is required"),
     slug: z.string().trim().min(1, "Slug is required"),
@@ -54,7 +53,12 @@ export const createIdeaSchema = z
       .array(z.string().cuid("Each tagId must be a valid cuid"))
       .optional(),
   })
-  .strict()
+  .strict();
+
+export const createIdeaSchema = ideaBaseSchema
+  .extend({
+    authorId: z.string().trim().min(1).optional(),
+  })
   .refine(
     (data) =>
       !(
@@ -68,16 +72,27 @@ export const createIdeaSchema = z
     },
   );
 
-export const updateIdeaSchema = createIdeaSchema
+export const updateIdeaSchema = ideaBaseSchema
   .partial()
   .extend({
     rejectionFeedback: z.string().trim().optional(),
     adminNote: z.string().trim().optional(),
   })
-  .strict()
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required to update",
-  });
+  })
+  .refine(
+    (data) =>
+      !(
+        data.accessType === "PAID" &&
+        (data.price === undefined || data.price <= 0)
+      ),
+    {
+      message:
+        "Price must be greater than 0 when accessType is PAID in the update payload",
+      path: ["price"],
+    },
+  );
 
 export const updateIdeaTagsSchema = z
   .object({
@@ -88,27 +103,32 @@ export const updateIdeaTagsSchema = z
 export const createIdeaAttachmentSchema = z
   .object({
     title: z.string().trim().optional(),
-    fileUrl: z.string().trim().min(1, "fileUrl is required"),
-    fileType: attachmentTypeEnum,
-    fileName: z.string().trim().optional(),
-    fileSizeBytes: z.number().int().nonnegative().optional(),
-    mimeType: z.string().trim().optional(),
+    data: z.string().trim().optional(),
   })
   .strict();
 
 export const createIdeaMediaSchema = z
   .object({
-    url: z.string().trim().min(1, "url is required"),
-    type: mediaTypeEnum,
+    data: z.string().trim().optional(),
+    url: z.string().trim().min(1, "url cannot be empty").optional(),
+    type: mediaTypeEnum.optional(),
     altText: z.string().trim().optional(),
     caption: z.string().trim().optional(),
-    sortOrder: z.number().int().nonnegative().optional(),
-    isPrimary: z.boolean().optional(),
+    sortOrder: z.coerce.number().int().nonnegative().optional(),
+    isPrimary: z
+      .union([z.boolean(), z.literal("true"), z.literal("false")])
+      .optional()
+      .transform((value) => {
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return value;
+      }),
   })
   .strict();
 
 export const rejectIdeaSchema = z
   .object({
+    status: z.literal("REJECTED").optional(),
     rejectionFeedback: z
       .string()
       .trim()

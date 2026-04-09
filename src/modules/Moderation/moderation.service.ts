@@ -1,4 +1,5 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import {
@@ -84,7 +85,7 @@ const reportIdea = async (
 
   const existingReport = await prisma.ideaReport.findUnique({
     where: {
-      ideaId_reporterId: {
+      uniq_idea_report_idea_reporter: {
         ideaId,
         reporterId,
       },
@@ -133,7 +134,7 @@ const reportComment = async (
 
   const existingReport = await prisma.commentReport.findUnique({
     where: {
-      commentId_reporterId: {
+      uniq_comment_report_comment_reporter: {
         commentId,
         reporterId,
       },
@@ -173,30 +174,54 @@ const reportComment = async (
   return report;
 };
 
-const getIdeaReports = async () => {
-  return prisma.ideaReport.findMany({
-    include: {
-      idea: {
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          status: true,
-        },
-      },
-      reporter: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+const getIdeaReports = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["note"],
+    filterableFields: ["reason", "status", "ideaId", "reporterId"],
+    sortableFields: ["createdAt", "updatedAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.ideaReport.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        idea: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            status: true,
+          },
+        },
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+      orderBy,
+    }),
+    prisma.ideaReport.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleIdeaReport = async (id: string) => {
@@ -287,30 +312,54 @@ const reviewIdeaReport = async (
   return result;
 };
 
-const getCommentReports = async () => {
-  return prisma.commentReport.findMany({
-    include: {
-      comment: {
-        select: {
-          id: true,
-          content: true,
-          ideaId: true,
-          isDeleted: true,
-        },
-      },
-      reporter: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+const getCommentReports = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["note", "comment.content"],
+    filterableFields: ["reason", "status", "commentId", "reporterId"],
+    sortableFields: ["createdAt", "updatedAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.commentReport.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        comment: {
+          select: {
+            id: true,
+            content: true,
+            ideaId: true,
+            isDeleted: true,
+          },
+        },
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+      orderBy,
+    }),
+    prisma.commentReport.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleCommentReport = async (id: string) => {
@@ -437,27 +486,54 @@ const createIdeaReviewFeedback = async (
   return feedback;
 };
 
-const getIdeaReviewFeedbacks = async (ideaId: string) => {
+const getIdeaReviewFeedbacks = async (
+  ideaId: string,
+  query: Record<string, unknown>,
+) => {
   await ensureIdeaExists(ideaId);
 
-  return prisma.ideaReviewFeedback.findMany({
-    where: {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "message"],
+    filterableFields: ["feedbackType", "isVisibleToAuthor", "reviewerId"],
+    sortableFields: ["createdAt", "updatedAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
       ideaId,
     },
-    include: {
-      reviewer: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
+  });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.ideaReviewFeedback.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
         },
       },
+      orderBy,
+    }),
+    prisma.ideaReviewFeedback.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+    data,
+  };
 };
 
 const getSingleReviewFeedback = async (id: string) => {
@@ -686,36 +762,60 @@ const restoreCommentByModerator = async (
   return result;
 };
 
-const getModerationActions = async () => {
-  return prisma.moderationAction.findMany({
-    include: {
-      actor: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-        },
-      },
-      idea: {
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-        },
-      },
-      comment: {
-        select: {
-          id: true,
-          content: true,
-          ideaId: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+const getModerationActions = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["note"],
+    filterableFields: ["actionType", "actorId", "ideaId", "commentId"],
+    sortableFields: ["createdAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.moderationAction.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        actor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        idea: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
+        comment: {
+          select: {
+            id: true,
+            content: true,
+            ideaId: true,
+          },
+        },
+      },
+      orderBy,
+    }),
+    prisma.moderationAction.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleModerationAction = async (id: string) => {

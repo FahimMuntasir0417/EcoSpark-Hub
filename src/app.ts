@@ -2,17 +2,41 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { notFound } from "./middlewares/notFound";
-import { IndexRoutes } from "./routes";
+import IndexRoutes from "./routes";
 import cookieParser from "cookie-parser";
 import path from "path";
+import fs from "fs";
 import { envVars } from "./config";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
+import { CommerceController } from "./modules/Commerce/commerce.controller";
 
 const app: Application = express();
 
+const resolveViewsPath = () => {
+  const candidates = [
+    path.resolve(process.cwd(), "src", "shared", "templates"),
+    path.resolve(process.cwd(), "src", "templates"),
+    path.resolve(process.cwd(), "shared", "templates"),
+    path.resolve(process.cwd(), "templates"),
+    path.resolve(process.cwd(), "dist", "shared", "templates"),
+    path.resolve(process.cwd(), "dist", "templates"),
+    path.resolve(process.cwd(), ".dist", "shared", "templates"),
+    path.resolve(process.cwd(), ".dist", "templates"),
+  ];
+
+  return (
+    candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0]
+  );
+};
+
 app.set("view engine", "ejs");
-app.set("views", path.resolve(process.cwd(), `src/templates`));
+app.set("views", resolveViewsPath());
+app.post(
+  "/api/v1/commerce/payments/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  CommerceController.stripeWebhook,
+);
 
 app.use(
   cors({
