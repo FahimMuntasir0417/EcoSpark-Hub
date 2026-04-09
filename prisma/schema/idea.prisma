@@ -79,7 +79,7 @@ model Idea {
   bookmarks         IdeaBookmark[]
   attachments       IdeaAttachment[]
   media             IdeaMedia[]
-  tags              IdeaTag[]
+  tags              Tag[]
   reports           IdeaReport[]
   moderationActions ModerationAction[]
   reviewFeedbacks   IdeaReviewFeedback[]
@@ -99,20 +99,6 @@ model Idea {
   @@index([submittedAt])
   @@index([lastActivityAt])
   @@index([deletedAt])
-}
-
-model IdeaTag {
-  id     String @id @default(cuid())
-  ideaId String
-  tagId  String
-
-  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([ideaId, tagId])
-  @@index([tagId])
 }
 
 model IdeaAttachment {

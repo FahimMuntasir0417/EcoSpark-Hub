@@ -1,4 +1,5 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import {
@@ -38,10 +39,36 @@ const createCategory = async (payload: ICreateCategoryPayload) => {
   });
 };
 
-const getAllCategories = async () => {
-  return prisma.category.findMany({
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+const getAllCategories = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["name", "slug", "description", "seoTitle"],
+    filterableFields: ["isActive", "color"],
+    sortableFields: ["sortOrder", "createdAt", "updatedAt", "name"],
+    defaultSortBy: "sortOrder",
+    defaultSortOrder: "asc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.category.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+    }),
+    prisma.category.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleCategory = async (id: string) => {

@@ -1,11 +1,12 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import {
-  IPaymentWebhookPayload,
-  IPurchaseIdeaPayload,
+  ICreateCheckoutSessionPayload,
   IRefundPurchasePayload,
 } from "./commerce.interface";
+import { StripeCheckoutService } from "./stripe.service";
 
 const purchaseInclude = {
   idea: {
@@ -80,69 +81,43 @@ const ensurePurchaseExists = async (id: string) => {
   return purchase;
 };
 
-const purchaseIdea = async (
+const createIdeaCheckoutSession = async (
   ideaId: string,
   userId: string,
-  payload: IPurchaseIdeaPayload,
-) => {
-  const idea = await prisma.idea.findUnique({
-    where: { id: ideaId },
+  payload: ICreateCheckoutSessionPayload,
+) => StripeCheckoutService.createIdeaCheckoutSession(ideaId, userId, payload);
+
+const getAllPurchases = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["paymentProvider", "providerPaymentId", "currency"],
+    filterableFields: ["status", "ideaId", "userId", "paymentProvider", "currency"],
+    sortableFields: ["createdAt", "updatedAt", "paidAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
 
-  if (!idea || idea.deletedAt) {
-    throw new AppError(status.NOT_FOUND, "Idea not found");
-  }
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
 
-  if (idea.accessType !== "PAID") {
-    throw new AppError(status.BAD_REQUEST, "Only paid ideas can be purchased");
-  }
+  const [data, total] = await Promise.all([
+    prisma.ideaPurchase.findMany({
+      where,
+      skip,
+      take,
+      include: purchaseInclude,
+      orderBy,
+    }),
+    prisma.ideaPurchase.count({ where }),
+  ]);
 
-  if (!idea.price || Number(idea.price) <= 0) {
-    throw new AppError(
-      status.BAD_REQUEST,
-      "Idea price is invalid for purchase",
-    );
-  }
-
-  const existingActivePurchase = await prisma.ideaPurchase.findFirst({
-    where: {
-      ideaId,
-      userId,
-      status: {
-        in: ["PENDING", "PAID"],
-      },
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
     },
-  });
-
-  if (existingActivePurchase) {
-    throw new AppError(
-      status.CONFLICT,
-      "An active purchase already exists for this idea",
-    );
-  }
-
-  const purchase = await prisma.ideaPurchase.create({
-    data: {
-      ideaId,
-      userId,
-      amount: idea.price,
-      currency: payload.currency ?? idea.currency,
-      paymentProvider: payload.paymentProvider,
-      status: "PENDING",
-    },
-    include: purchaseInclude,
-  });
-
-  return purchase;
-};
-
-const getAllPurchases = async () => {
-  return prisma.ideaPurchase.findMany({
-    include: purchaseInclude,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+    data,
+  };
 };
 
 const getSinglePurchase = async (id: string) => {
@@ -158,14 +133,40 @@ const getSinglePurchase = async (id: string) => {
   return purchase;
 };
 
-const getMyPurchases = async (userId: string) => {
-  return prisma.ideaPurchase.findMany({
-    where: { userId },
-    include: purchaseInclude,
-    orderBy: {
-      createdAt: "desc",
+const getMyPurchases = async (userId: string, query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["paymentProvider", "providerPaymentId", "currency"],
+    filterableFields: ["status", "ideaId", "paymentProvider", "currency"],
+    sortableFields: ["createdAt", "updatedAt", "paidAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
+      userId,
     },
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.ideaPurchase.findMany({
+      where,
+      skip,
+      take,
+      include: purchaseInclude,
+      orderBy,
+    }),
+    prisma.ideaPurchase.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const refundPurchase = async (
@@ -179,6 +180,13 @@ const refundPurchase = async (
     throw new AppError(
       status.BAD_REQUEST,
       "Only paid purchases can be refunded",
+    );
+  }
+
+  if (purchase.paymentProvider === "STRIPE") {
+    throw new AppError(
+      status.NOT_IMPLEMENTED,
+      "Stripe refunds are not integrated yet",
     );
   }
 
@@ -239,13 +247,37 @@ const cancelPurchase = async (id: string, userId: string) => {
   return updatedPurchase;
 };
 
-const getAllTransactions = async () => {
-  return prisma.paymentTransaction.findMany({
-    include: transactionInclude,
-    orderBy: {
-      createdAt: "desc",
-    },
+const getAllTransactions = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["transactionId", "provider", "failureReason", "currency"],
+    filterableFields: ["status", "purchaseId", "userId", "provider", "currency"],
+    sortableFields: ["createdAt", "updatedAt"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
   });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.paymentTransaction.findMany({
+      where,
+      skip,
+      take,
+      include: transactionInclude,
+      orderBy,
+    }),
+    prisma.paymentTransaction.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleTransaction = async (id: string) => {
@@ -261,61 +293,13 @@ const getSingleTransaction = async (id: string) => {
   return transaction;
 };
 
-const paymentWebhook = async (payload: IPaymentWebhookPayload) => {
-  const purchase = await prisma.ideaPurchase.findUnique({
-    where: { id: payload.purchaseId },
-  });
-
-  if (!purchase) {
-    throw new AppError(status.NOT_FOUND, "Purchase not found");
-  }
-
-  const existingTransaction = await prisma.paymentTransaction.findUnique({
-    where: {
-      transactionId: payload.transactionId,
-    },
-  });
-
-  if (existingTransaction) {
-    return existingTransaction;
-  }
-
-  const result = await prisma.$transaction(async (tx) => {
-    const transaction = await tx.paymentTransaction.create({
-      data: {
-        purchaseId: purchase.id,
-        userId: purchase.userId,
-        amount: payload.amount ?? purchase.amount,
-        currency: payload.currency ?? purchase.currency,
-        provider: payload.provider,
-        transactionId: payload.transactionId,
-        status: payload.status,
-        gatewayResponse: payload.gatewayResponse,
-        failureReason: payload.failureReason,
-      },
-      include: transactionInclude,
-    });
-
-    await tx.ideaPurchase.update({
-      where: { id: purchase.id },
-      data: {
-        status: payload.status,
-        paidAt: payload.status === "PAID" ? new Date() : purchase.paidAt,
-        refundedAt:
-          payload.status === "REFUNDED" ? new Date() : purchase.refundedAt,
-        providerPaymentId:
-          payload.providerPaymentId ?? purchase.providerPaymentId,
-      },
-    });
-
-    return transaction;
-  });
-
-  return result;
-};
+const handleStripeWebhook = async (
+  rawBody: Buffer,
+  signature: string | string[] | undefined,
+) => StripeCheckoutService.verifyAndHandleWebhook(rawBody, signature);
 
 export const CommerceService = {
-  purchaseIdea,
+  createIdeaCheckoutSession,
   getAllPurchases,
   getSinglePurchase,
   getMyPurchases,
@@ -323,5 +307,5 @@ export const CommerceService = {
   cancelPurchase,
   getAllTransactions,
   getSingleTransaction,
-  paymentWebhook,
+  handleStripeWebhook,
 };

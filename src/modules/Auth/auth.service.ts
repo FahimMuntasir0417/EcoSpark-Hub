@@ -5,15 +5,111 @@ import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import { tokenUtils } from "../../utils/token";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import {
   IChangePasswordPayload,
   ILoginUserPayload,
   IRegisterMemberPayload,
+  IUpdateMyProfilePayload,
 } from "./auth.interface";
 
 import AppError from "../../errors/AppError";
 import { envVars } from "../../config";
 import { Role, UserStatus } from "../../generated/prisma/enums";
+
+const userProfileSelect = {
+  id: true,
+  name: true,
+  email: true,
+  emailVerified: true,
+  role: true,
+  status: true,
+  needPasswordChange: true,
+  isDeleted: true,
+  deletedAt: true,
+  image: true,
+  createdAt: true,
+  updatedAt: true,
+  admin: {
+    select: {
+      id: true,
+      profileImage: true,
+      contactNumber: true,
+      isDeleted: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+  member: {
+    select: {
+      id: true,
+      profilePhoto: true,
+      contactNumber: true,
+      address: true,
+      occupation: true,
+      interests: true,
+      experienceLevel: true,
+      preferredCategories: true,
+      membershipLevel: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+  scientist: {
+    select: {
+      id: true,
+      profilePhoto: true,
+      contactNumber: true,
+      address: true,
+      institution: true,
+      department: true,
+      specialization: true,
+      researchInterests: true,
+      yearsOfExperience: true,
+      qualification: true,
+      linkedinUrl: true,
+      googleScholarUrl: true,
+      orcid: true,
+      verifiedAt: true,
+      isDeleted: true,
+      deletedAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+};
+
+const omitUndefined = <T extends Record<string, unknown>>(obj: T) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
+};
+
+const getRequiredTrimmedString = (value: unknown, fieldName: string) => {
+  if (typeof value !== "string") {
+    throw new AppError(status.BAD_REQUEST, `${fieldName} is required`);
+  }
+
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    throw new AppError(status.BAD_REQUEST, `${fieldName} is required`);
+  }
+
+  return normalizedValue;
+};
+
+const getRequiredString = (value: unknown, fieldName: string) => {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new AppError(status.BAD_REQUEST, `${fieldName} is required`);
+  }
+
+  return value;
+};
+
+const getRequiredNormalizedEmail = (value: unknown) => {
+  return getRequiredTrimmedString(value, "Email").toLowerCase();
+};
 
 const parseRole = (role: string): Role => {
   switch (role) {
@@ -364,31 +460,45 @@ const logoutUser = async (sessionToken: string) => {
 };
 
 const verifyEmail = async (email: string, otp: string) => {
-  const result = await auth.api.verifyEmailOTP({
-    body: {
-      email,
-      otp,
+  const normalizedEmail = getRequiredNormalizedEmail(email);
+  const normalizedOtp = getRequiredTrimmedString(otp, "OTP");
+
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email: normalizedEmail,
     },
   });
 
-  if (result?.status) {
-    await prisma.user.update({
-      where: {
-        email,
-      },
-      data: {
-        emailVerified: true,
-      },
-    });
+  if (!existingUser) {
+    throw new AppError(status.NOT_FOUND, "User not found");
   }
 
-  return result;
+  if (existingUser.emailVerified) {
+    return {
+      status: true,
+      alreadyVerified: true,
+    };
+  }
+
+  const result = await auth.api.verifyEmailOTP({
+    body: {
+      email: normalizedEmail,
+      otp: normalizedOtp,
+    },
+  });
+
+  return {
+    ...result,
+    alreadyVerified: false,
+  };
 };
 
 const forgetPassword = async (email: string) => {
+  const normalizedEmail = getRequiredNormalizedEmail(email);
+
   const existingUser = await prisma.user.findUnique({
     where: {
-      email,
+      email: normalizedEmail,
     },
   });
 
@@ -418,7 +528,7 @@ const forgetPassword = async (email: string) => {
 
   await auth.api.requestPasswordResetEmailOTP({
     body: {
-      email,
+      email: normalizedEmail,
     },
   });
 };
@@ -428,9 +538,13 @@ const resetPassword = async (
   otp: string,
   newPassword: string,
 ) => {
+  const normalizedEmail = getRequiredNormalizedEmail(email);
+  const normalizedOtp = getRequiredTrimmedString(otp, "OTP");
+  const normalizedNewPassword = getRequiredString(newPassword, "New password");
+
   const existingUser = await prisma.user.findUnique({
     where: {
-      email,
+      email: normalizedEmail,
     },
   });
 
@@ -460,9 +574,9 @@ const resetPassword = async (
 
   await auth.api.resetPasswordEmailOTP({
     body: {
-      email,
-      otp,
-      password: newPassword,
+      email: normalizedEmail,
+      otp: normalizedOtp,
+      password: normalizedNewPassword,
     },
   });
 
@@ -506,6 +620,187 @@ const googleLoginSuccess = async (session: Record<string, any>) => {
   };
 };
 
+const getAllUsers = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["name", "email"],
+    filterableFields: [
+      "role",
+      "status",
+      "emailVerified",
+      "needPasswordChange",
+      "isDeleted",
+    ],
+    sortableFields: ["createdAt", "updatedAt", "name", "email"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+  });
+
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+      select: userProfileSelect,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
+};
+
+const getMyProfile = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: userProfileSelect,
+  });
+
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+
+  return user;
+};
+
+const updateMyProfile = async (
+  userId: string,
+  payload: IUpdateMyProfilePayload,
+) => {
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      role: true,
+      admin: {
+        select: {
+          id: true,
+        },
+      },
+      member: {
+        select: {
+          id: true,
+        },
+      },
+      scientist: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (!existingUser) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+
+  const userData = omitUndefined({
+    name: payload.name,
+    image: payload.image,
+  });
+
+  const adminData = omitUndefined({
+    profileImage: payload.image,
+    contactNumber: payload.contactNumber,
+  });
+
+  const memberData = omitUndefined({
+    profilePhoto: payload.image,
+    contactNumber: payload.contactNumber,
+    address: payload.address,
+  });
+
+  const scientistData = omitUndefined({
+    profilePhoto: payload.image,
+    contactNumber: payload.contactNumber,
+    address: payload.address,
+  });
+
+  let roleSpecificData: Record<string, unknown> = {};
+
+  if (existingUser.role === Role.ADMIN || existingUser.role === Role.SUPER_ADMIN) {
+    roleSpecificData = adminData;
+  } else if (existingUser.role === Role.MEMBER) {
+    roleSpecificData = memberData;
+  } else if (existingUser.role === Role.SCIENTIST) {
+    roleSpecificData = scientistData;
+  }
+
+  if (Object.keys(userData).length === 0 && Object.keys(roleSpecificData).length === 0) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "No valid profile fields provided for update",
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(userData).length > 0) {
+      await tx.user.update({
+        where: {
+          id: userId,
+        },
+        data: userData,
+      });
+    }
+
+    if (existingUser.role === Role.ADMIN || existingUser.role === Role.SUPER_ADMIN) {
+      if (Object.keys(adminData).length > 0) {
+        if (!existingUser.admin) {
+          throw new AppError(status.NOT_FOUND, "Admin profile not found");
+        }
+
+        await tx.admin.update({
+          where: {
+            userId,
+          },
+          data: adminData,
+        });
+      }
+    } else if (existingUser.role === Role.MEMBER) {
+      if (Object.keys(memberData).length > 0) {
+        await tx.member.upsert({
+          where: {
+            userId,
+          },
+          create: {
+            userId,
+            ...memberData,
+          },
+          update: memberData,
+        });
+      }
+    } else if (existingUser.role === Role.SCIENTIST) {
+      if (Object.keys(scientistData).length > 0) {
+        await tx.scientist.upsert({
+          where: {
+            userId,
+          },
+          create: {
+            userId,
+            ...scientistData,
+          },
+          update: scientistData,
+        });
+      }
+    }
+  });
+
+  return getMyProfile(userId);
+};
+
 export const AuthService = {
   registerMember,
   loginUser,
@@ -516,4 +811,7 @@ export const AuthService = {
   forgetPassword,
   resetPassword,
   googleLoginSuccess,
+  getAllUsers,
+  getMyProfile,
+  updateMyProfile,
 };

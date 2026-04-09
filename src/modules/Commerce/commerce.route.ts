@@ -1,18 +1,19 @@
 import express from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { CommerceController } from "./commerce.controller";
 import {
-  paymentWebhookSchema,
-  purchaseIdeaSchema,
+  createCheckoutSessionSchema,
   refundPurchaseSchema,
 } from "./commerce.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post(
-  "/ideas/:ideaId/purchase",
-  validateRequest(purchaseIdeaSchema),
-  CommerceController.purchaseIdea,
+  "/ideas/:ideaId/checkout-session",
+  validateRequest(createCheckoutSessionSchema),
+  CommerceController.createStripeCheckoutSession,
 );
 
 router.get("/purchases", CommerceController.getAllPurchases);
@@ -29,11 +30,5 @@ router.patch("/purchases/:id/cancel", CommerceController.cancelPurchase);
 
 router.get("/transactions", CommerceController.getAllTransactions);
 router.get("/transactions/:id", CommerceController.getSingleTransaction);
-
-router.post(
-  "/payments/webhook",
-  validateRequest(paymentWebhookSchema),
-  CommerceController.paymentWebhook,
-);
 
 export const CommerceRoutes = router;

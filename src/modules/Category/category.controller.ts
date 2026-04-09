@@ -15,14 +15,17 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllCategories = catchAsync(async (_req: Request, res: Response) => {
-  const result = await CategoryService.getAllCategories();
+const getAllCategories = catchAsync(async (req: Request, res: Response) => {
+  const result = await CategoryService.getAllCategories(
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Categories retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

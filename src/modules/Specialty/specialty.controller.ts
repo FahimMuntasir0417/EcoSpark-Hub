@@ -16,14 +16,17 @@ const createSpecialty = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllSpecialties = catchAsync(async (_req: Request, res: Response) => {
-  const result = await SpecialtyService.getAllSpecialties();
+const getAllSpecialties = catchAsync(async (req: Request, res: Response) => {
+  const result = await SpecialtyService.getAllSpecialties(
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Specialties retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

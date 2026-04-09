@@ -1,4 +1,5 @@
 import status from "http-status";
+import { QueryBuilder } from "../../builder/queryBuilder";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../errors/AppError";
 import {
@@ -28,17 +29,38 @@ const createSpecialty = async (payload: ICreateSpecialtyPayload) => {
   return specialty;
 };
 
-const getAllSpecialties = async () => {
-  const specialties = await prisma.specialty.findMany({
-    where: {
+const getAllSpecialties = async (query: Record<string, unknown>) => {
+  const queryBuilder = new QueryBuilder({
+    query,
+    searchableFields: ["title", "description"],
+    sortableFields: ["createdAt", "updatedAt", "title"],
+    defaultSortBy: "createdAt",
+    defaultSortOrder: "desc",
+    baseWhere: {
       isDeleted: false,
-    },
-    orderBy: {
-      createdAt: "desc",
     },
   });
 
-  return specialties;
+  const { where, skip, take, orderBy, meta } = queryBuilder.build();
+
+  const [data, total] = await Promise.all([
+    prisma.specialty.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+    }),
+    prisma.specialty.count({ where }),
+  ]);
+
+  return {
+    meta: {
+      ...meta,
+      total,
+      totalPage: Math.ceil(total / meta.limit),
+    },
+    data,
+  };
 };
 
 const getSingleSpecialty = async (id: string) => {

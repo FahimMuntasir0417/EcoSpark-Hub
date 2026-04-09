@@ -9,6 +9,7 @@ import { tokenUtils } from "../../utils/token";
 import { AuthService } from "./auth.service";
 import { envVars } from "../../config";
 import AppError from "../../errors/AppError";
+import { IUpdateMyProfilePayload } from "./auth.interface";
 
 const registerMember = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -62,6 +63,58 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
       refreshToken,
       ...rest,
     },
+  });
+});
+
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.getAllUsers(
+    req.query as Record<string, unknown>,
+  );
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Users retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const getMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId as string;
+  const result = await AuthService.getMyProfile(userId);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "User profile retrieved successfully",
+    data: result,
+  });
+});
+
+const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId as string;
+  const file = req.file as (Express.Multer.File & { path?: string }) | undefined;
+
+  if (file && !file.path) {
+    throw new AppError(status.BAD_REQUEST, "Image upload failed");
+  }
+
+  const payload = {
+    ...req.body,
+  } as IUpdateMyProfilePayload;
+
+  if (file?.path) {
+    payload.image = file.path;
+  }
+
+  const result = await AuthService.updateMyProfile(userId, payload);
+
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "User profile updated successfully",
+    data: result,
   });
 });
 
@@ -165,12 +218,17 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   const { email, otp } = req.body;
 
-  await AuthService.verifyEmail(email, otp);
+  const result = await AuthService.verifyEmail(email, otp);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
-    message: "Email verified successfully",
+    message: result.alreadyVerified
+      ? "Email already verified"
+      : "Email verified successfully",
+    data: {
+      alreadyVerified: result.alreadyVerified,
+    },
   });
 });
 
@@ -251,6 +309,9 @@ const handleOAuthError = catchAsync((req: Request, res: Response) => {
 export const AuthController = {
   registerMember,
   loginUser,
+  getAllUsers,
+  getMyProfile,
+  updateMyProfile,
   getNewToken,
   changePassword,
   logoutUser,

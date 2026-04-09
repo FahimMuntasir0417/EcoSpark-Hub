@@ -38,14 +38,17 @@ const reportComment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getIdeaReports = catchAsync(async (_req: Request, res: Response) => {
-  const result = await ModerationService.getIdeaReports();
+const getIdeaReports = catchAsync(async (req: Request, res: Response) => {
+  const result = await ModerationService.getIdeaReports(
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Idea reports retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
@@ -77,14 +80,17 @@ const reviewIdeaReport = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getCommentReports = catchAsync(async (_req: Request, res: Response) => {
-  const result = await ModerationService.getCommentReports();
+const getCommentReports = catchAsync(async (req: Request, res: Response) => {
+  const result = await ModerationService.getCommentReports(
+    req.query as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
     success: true,
     message: "Comment reports retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
@@ -143,13 +149,15 @@ const getIdeaReviewFeedbacks = catchAsync(
   async (req: Request, res: Response) => {
     const result = await ModerationService.getIdeaReviewFeedbacks(
       req.params.ideaId,
+      req.query as Record<string, unknown>,
     );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Review feedbacks retrieved successfully",
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );
@@ -225,14 +233,17 @@ const restoreCommentByModerator = catchAsync(
 );
 
 const getModerationActions = catchAsync(
-  async (_req: Request, res: Response) => {
-    const result = await ModerationService.getModerationActions();
+  async (req: Request, res: Response) => {
+    const result = await ModerationService.getModerationActions(
+      req.query as Record<string, unknown>,
+    );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
       success: true,
       message: "Moderation actions retrieved successfully",
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );

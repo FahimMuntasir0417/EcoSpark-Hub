@@ -7,9 +7,12 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
+    "seed:admin": "tsc -p tsconfig.seed.json && node dist-seed/scripts/seed-admin.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "stripe:webhook": "\"C:\\Tools\\stripe\\stripe.exe\" listen --forward-to localhost:5000/api/v1/commerce/payments/webhook/stripe",
+    "stripe:trigger": "\"C:\\Tools\\stripe\\stripe.exe\" trigger checkout.session.completed"
   },
   "keywords": [
     "express",
@@ -37,6 +40,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^8.0.1",
     "pg": "^8.19.0",
+    "stripe": "^22.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

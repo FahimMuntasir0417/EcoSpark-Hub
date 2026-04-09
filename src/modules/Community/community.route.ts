@@ -1,4 +1,5 @@
 import express from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { CommunityController } from "./community.controller";
 import {
@@ -9,6 +10,7 @@ import {
 } from "./community.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post(
   "/experience-reports",

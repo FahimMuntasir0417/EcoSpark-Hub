@@ -1,4 +1,5 @@
 import express from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { CampaignController } from "./campaign.controller";
 import {
@@ -8,6 +9,7 @@ import {
 } from "./campaign.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post(
   "/",

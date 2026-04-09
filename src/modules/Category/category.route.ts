@@ -1,4 +1,5 @@
 import express from "express";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { CategoryController } from "./category.controller";
 import { validateRequest } from "../../middlewares/validateRequest";
 import {
@@ -7,6 +8,7 @@ import {
 } from "./category.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
 router.post(
   "/",

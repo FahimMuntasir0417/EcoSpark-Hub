@@ -1,4 +1,6 @@
 import express from "express";
+import { multerUpload } from "../../config/multer.config";
+import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { IdeaController } from "./idea.controller";
 import {
@@ -11,8 +13,13 @@ import {
 } from "./idea.validation";
 
 const router = express.Router();
+router.use(checkAuth());
 
-router.post("/", validateRequest(createIdeaSchema), IdeaController.createIdea);
+router.post(
+  "/",
+  validateRequest(createIdeaSchema),
+  IdeaController.createIdea,
+);
 
 router.get("/", IdeaController.getAllIdeas);
 router.get("/slug/:slug", IdeaController.getIdeaBySlug);
@@ -45,6 +52,7 @@ router.patch(
 
 router.post(
   "/:id/attachments",
+  multerUpload.single("file"),
   validateRequest(createIdeaAttachmentSchema),
   IdeaController.addIdeaAttachment,
 );
@@ -56,10 +64,14 @@ router.delete(
 
 router.post(
   "/:id/media",
+  multerUpload.single("file"),
   validateRequest(createIdeaMediaSchema),
   IdeaController.addIdeaMedia,
 );
 
-router.delete("/:id/media/:mediaId", IdeaController.deleteIdeaMedia);
+router.delete(
+  "/:id/media/:mediaId",
+  IdeaController.deleteIdeaMedia,
+);
 
 export const IdeaRoutes = router;

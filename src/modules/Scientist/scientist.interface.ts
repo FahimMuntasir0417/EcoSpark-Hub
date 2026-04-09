@@ -1,9 +1,6 @@
 export interface ICreateScientistPayload {
-  password: string;
-  specialties: string[];
+  userId: string;
   scientist: {
-    name: string;
-    email: string;
     profilePhoto?: string;
     contactNumber?: string;
     address?: string;
@@ -17,11 +14,10 @@ export interface ICreateScientistPayload {
     googleScholarUrl?: string;
     orcid?: string;
   };
+  specialtyIds?: string[];
 }
 
 export interface IUpdateScientistPayload {
-  name?: string;
-  email?: string;
   profilePhoto?: string;
   contactNumber?: string;
   address?: string;
@@ -34,9 +30,12 @@ export interface IUpdateScientistPayload {
   linkedinUrl?: string;
   googleScholarUrl?: string;
   orcid?: string;
-  verifiedById?: string;
 }
 
 export interface IAssignScientistSpecialtiesPayload {
   specialtyIds: string[];
+}
+
+export interface IVerifyScientistPayload {
+  verified: boolean;
 }
