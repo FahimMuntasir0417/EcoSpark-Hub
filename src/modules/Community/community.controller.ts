@@ -3,7 +3,9 @@ import status from "http-status";
 import AppError from "../../errors/AppError";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
+import { ICreateExperienceReportPayload } from "./community.interface";
 import { CommunityService } from "./community.service";
+import { createExperienceReportSchema } from "./community.validation";
 
 const getAuthenticatedUserId = (req: Request) => {
   const userId = req.user?.userId;
@@ -18,13 +20,91 @@ const getAuthenticatedUserId = (req: Request) => {
   return userId;
 };
 
+const parseJsonField = <T>(value: unknown, fieldName: string): T | undefined => {
+  if (typeof value !== "string" || !value.trim()) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    throw new AppError(
+      status.BAD_REQUEST,
+      `${fieldName} must be a valid JSON string`,
+    );
+  }
+};
+
+const getUploadedImageUrl = (
+  file: (Express.Multer.File & { path?: string }) | undefined,
+  fieldName: string,
+) => {
+  if (!file) {
+    return undefined;
+  }
+
+  if (!file.mimetype.toLowerCase().startsWith("image/")) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      `${fieldName} must be an image file`,
+    );
+  }
+
+  if (!file.path) {
+    throw new AppError(status.BAD_REQUEST, `${fieldName} upload failed`);
+  }
+
+  return file.path;
+};
+
 const createExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
+    const files = req.files as
+      | {
+          beforeImage?: Array<Express.Multer.File & { path?: string }>;
+          afterImage?: Array<Express.Multer.File & { path?: string }>;
+        }
+      | undefined;
+
+    const parsedData = parseJsonField<
+      Partial<ICreateExperienceReportPayload>
+    >(req.body.data, "data");
+
+    const beforeImageFile = files?.beforeImage?.[0];
+    const afterImageFile = files?.afterImage?.[0];
+
+    const mergedPayload = {
+      ideaId: req.body.ideaId ?? parsedData?.ideaId,
+      title: req.body.title ?? parsedData?.title,
+      summary: req.body.summary ?? parsedData?.summary,
+      outcome: req.body.outcome ?? parsedData?.outcome,
+      challenges: req.body.challenges ?? parsedData?.challenges,
+      measurableResult:
+        req.body.measurableResult ?? parsedData?.measurableResult,
+      adoptedScale: req.body.adoptedScale ?? parsedData?.adoptedScale,
+      location: req.body.location ?? parsedData?.location,
+      effectivenessRating:
+        req.body.effectivenessRating ?? parsedData?.effectivenessRating,
+      beforeImageUrl:
+        getUploadedImageUrl(beforeImageFile, "beforeImage") ??
+        req.body.beforeImageUrl ??
+        parsedData?.beforeImageUrl,
+      afterImageUrl:
+        getUploadedImageUrl(afterImageFile, "afterImage") ??
+        req.body.afterImageUrl ??
+        parsedData?.afterImageUrl,
+    };
+
+    const parsedPayload = createExperienceReportSchema.safeParse(mergedPayload);
+
+    if (!parsedPayload.success) {
+      throw parsedPayload.error;
+    }
 
     const result = await CommunityService.createExperienceReport(
       userId,
-      req.body,
+      parsedPayload.data,
     );
 
     sendResponse(res, {

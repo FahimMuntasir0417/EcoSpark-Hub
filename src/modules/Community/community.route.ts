@@ -1,9 +1,10 @@
 import express from "express";
+import { multerUpload } from "../../config/multer.config";
 import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { CommunityController } from "./community.controller";
 import {
-  createExperienceReportSchema,
+  createExperienceReportUploadSchema,
   subscribeNewsletterSchema,
   unsubscribeNewsletterSchema,
   updateExperienceReportSchema,
@@ -14,7 +15,11 @@ router.use(checkAuth());
 
 router.post(
   "/experience-reports",
-  validateRequest(createExperienceReportSchema),
+  multerUpload.fields([
+    { name: "beforeImage", maxCount: 1 },
+    { name: "afterImage", maxCount: 1 },
+  ]),
+  validateRequest(createExperienceReportUploadSchema),
   CommunityController.createExperienceReport,
 );
 

@@ -16,16 +16,44 @@ type TNormalizedError = {
 };
 
 const rollbackUploadedFile = async (req: Request) => {
-  const filePath = (req.file as { path?: string } | undefined)?.path;
+  const uploadedFilePaths = new Set<string>();
+  const singleFile = req.file as { path?: string } | undefined;
 
-  if (!filePath) {
+  if (singleFile?.path) {
+    uploadedFilePaths.add(singleFile.path);
+  }
+
+  const files = req.files as
+    | Array<{ path?: string }>
+    | Record<string, Array<{ path?: string }>>
+    | undefined;
+
+  if (Array.isArray(files)) {
+    for (const file of files) {
+      if (file?.path) {
+        uploadedFilePaths.add(file.path);
+      }
+    }
+  } else if (files && typeof files === "object") {
+    for (const fileList of Object.values(files)) {
+      for (const file of fileList) {
+        if (file?.path) {
+          uploadedFilePaths.add(file.path);
+        }
+      }
+    }
+  }
+
+  if (uploadedFilePaths.size === 0) {
     return;
   }
 
-  try {
-    await deleteFileFromCloudinary(filePath);
-  } catch (cleanupError) {
-    console.error("Failed to rollback uploaded file:", cleanupError);
+  for (const filePath of uploadedFilePaths) {
+    try {
+      await deleteFileFromCloudinary(filePath);
+    } catch (cleanupError) {
+      console.error("Failed to rollback uploaded file:", cleanupError);
+    }
   }
 };
 

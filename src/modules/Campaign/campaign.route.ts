@@ -1,10 +1,11 @@
 import express from "express";
+import { multerUpload } from "../../config/multer.config";
 import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
 import { CampaignController } from "./campaign.controller";
 import {
-  createCampaignSchema,
-  updateCampaignSchema,
+  createCampaignUploadSchema,
+  updateCampaignUploadSchema,
   updateCampaignStatusSchema,
 } from "./campaign.validation";
 
@@ -13,7 +14,8 @@ router.use(checkAuth());
 
 router.post(
   "/",
-  validateRequest(createCampaignSchema),
+  multerUpload.single("bannerImage"),
+  validateRequest(createCampaignUploadSchema),
   CampaignController.createCampaign,
 );
 
@@ -23,7 +25,8 @@ router.get("/:id", CampaignController.getSingleCampaign);
 
 router.patch(
   "/:id",
-  validateRequest(updateCampaignSchema),
+  multerUpload.single("bannerImage"),
+  validateRequest(updateCampaignUploadSchema),
   CampaignController.updateCampaign,
 );
 
