@@ -2,24 +2,59 @@ import { envVars } from "../config";
 import { sendEmail } from "../utils/email";
 import { prisma } from "./prisma";
 import { Role, UserStatus } from "../generated/prisma/enums";
-type AuthInstance = {
-  api: any;
+import path from "path";
+import { createRequire } from "module";
+import { pathToFileURL } from "url";
+
+type AuthModuleSpecifier =
+  | "better-auth"
+  | "better-auth/adapters/prisma"
+  | "better-auth/plugins"
+  | "better-auth/node";
+
+type BetterAuthModule = typeof import("better-auth");
+type BetterAuthPrismaModule = typeof import("better-auth/adapters/prisma");
+type BetterAuthPluginsModule = typeof import("better-auth/plugins");
+type BetterAuthNodeModule = typeof import("better-auth/node");
+
+const runtimeRequire = createRequire(path.join(process.cwd(), "package.json"));
+
+// Keep Better Auth specifiers literal so Vercel can trace them into the bundle.
+const esmModuleUrls: Record<AuthModuleSpecifier, string> = {
+  "better-auth": pathToFileURL(
+    typeof require === "function" && typeof require.resolve === "function"
+      ? require.resolve("better-auth")
+      : runtimeRequire.resolve("better-auth"),
+  ).href,
+  "better-auth/adapters/prisma": pathToFileURL(
+    typeof require === "function" && typeof require.resolve === "function"
+      ? require.resolve("better-auth/adapters/prisma")
+      : runtimeRequire.resolve("better-auth/adapters/prisma"),
+  ).href,
+  "better-auth/plugins": pathToFileURL(
+    typeof require === "function" && typeof require.resolve === "function"
+      ? require.resolve("better-auth/plugins")
+      : runtimeRequire.resolve("better-auth/plugins"),
+  ).href,
+  "better-auth/node": pathToFileURL(
+    typeof require === "function" && typeof require.resolve === "function"
+      ? require.resolve("better-auth/node")
+      : runtimeRequire.resolve("better-auth/node"),
+  ).href,
 };
 
-let authPromise: Promise<AuthInstance> | null = null;
-
-const importEsmModule = <T>(specifier: string) => {
+const importEsmModule = <T>(specifier: AuthModuleSpecifier) => {
   return Function("modulePath", "return import(modulePath);")(
-    specifier,
+    esmModuleUrls[specifier],
   ) as Promise<T>;
 };
 
-const createAuth = async (): Promise<AuthInstance> => {
+const createAuth = async () => {
   const [{ betterAuth }, { prismaAdapter }, { bearer, emailOTP }] =
     await Promise.all([
-      importEsmModule<any>("better-auth"),
-      importEsmModule<any>("better-auth/adapters/prisma"),
-      importEsmModule<any>("better-auth/plugins"),
+      importEsmModule<BetterAuthModule>("better-auth"),
+      importEsmModule<BetterAuthPrismaModule>("better-auth/adapters/prisma"),
+      importEsmModule<BetterAuthPluginsModule>("better-auth/plugins"),
     ]);
 
   return betterAuth({
@@ -188,8 +223,12 @@ const createAuth = async (): Promise<AuthInstance> => {
         },
       },
     },
-  }) as AuthInstance;
+  });
 };
+
+type AuthInstance = Awaited<ReturnType<typeof createAuth>>;
+
+let authPromise: Promise<AuthInstance> | null = null;
 
 const getAuth = (): Promise<AuthInstance> => {
   if (!authPromise) {
@@ -201,7 +240,7 @@ const getAuth = (): Promise<AuthInstance> => {
 
 const getAuthNodeHandler = async () => {
   const [{ toNodeHandler }, auth] = await Promise.all([
-    importEsmModule<any>("better-auth/node"),
+    importEsmModule<BetterAuthNodeModule>("better-auth/node"),
     getAuth(),
   ]);
 
