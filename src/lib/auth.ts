@@ -17,6 +17,18 @@ type BetterAuthPrismaModule = typeof import("better-auth/adapters/prisma");
 type BetterAuthPluginsModule = typeof import("better-auth/plugins");
 type BetterAuthNodeModule = typeof import("better-auth/node");
 
+// These literal import expressions are kept so Vercel's dependency tracer
+// includes Better Auth in the serverless bundle, even though runtime loading
+// below uses a preserved native `import()` via `Function(...)`.
+const tracedBetterAuthImports = {
+  "better-auth": () => import("better-auth"),
+  "better-auth/adapters/prisma": () => import("better-auth/adapters/prisma"),
+  "better-auth/plugins": () => import("better-auth/plugins"),
+  "better-auth/node": () => import("better-auth/node"),
+} satisfies Record<AuthModuleSpecifier, () => Promise<unknown>>;
+
+void tracedBetterAuthImports;
+
 const runtimeRequire = createRequire(path.join(process.cwd(), "package.json"));
 
 // Keep Better Auth specifiers literal so Vercel can trace them into the bundle.
