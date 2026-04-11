@@ -8,7 +8,7 @@ const reportIdea = catchAsync(async (req: Request, res: Response) => {
   const reporterId = (req as Request & { user?: { userId: string } }).user
     ?.userId as string;
   const result = await ModerationService.reportIdea(
-    req.params.ideaId,
+    req.params.ideaId as string,
     reporterId,
     req.body,
   );
@@ -25,7 +25,7 @@ const reportComment = catchAsync(async (req: Request, res: Response) => {
   const reporterId = (req as Request & { user?: { userId: string } }).user
     ?.userId as string;
   const result = await ModerationService.reportComment(
-    req.params.commentId,
+    req.params.commentId as string,
     reporterId,
     req.body,
   );
@@ -53,7 +53,9 @@ const getIdeaReports = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleIdeaReport = catchAsync(async (req: Request, res: Response) => {
-  const result = await ModerationService.getSingleIdeaReport(req.params.id);
+  const result = await ModerationService.getSingleIdeaReport(
+    req.params.id as string,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -67,7 +69,7 @@ const reviewIdeaReport = catchAsync(async (req: Request, res: Response) => {
   const actorId = (req as Request & { user?: { userId: string } }).user
     ?.userId as string;
   const result = await ModerationService.reviewIdeaReport(
-    req.params.id,
+    req.params.id as string,
     actorId,
     req.body,
   );
@@ -97,7 +99,7 @@ const getCommentReports = catchAsync(async (req: Request, res: Response) => {
 const getSingleCommentReport = catchAsync(
   async (req: Request, res: Response) => {
     const result = await ModerationService.getSingleCommentReport(
-      req.params.id,
+      req.params.id as string,
     );
 
     sendResponse(res, {
@@ -113,7 +115,7 @@ const reviewCommentReport = catchAsync(async (req: Request, res: Response) => {
   const actorId = (req as Request & { user?: { userId: string } }).user
     ?.userId as string;
   const result = await ModerationService.reviewCommentReport(
-    req.params.id,
+    req.params.id as string,
     actorId,
     req.body,
   );
@@ -131,7 +133,7 @@ const createIdeaReviewFeedback = catchAsync(
     const reviewerId = (req as Request & { user?: { userId: string } }).user
       ?.userId as string;
     const result = await ModerationService.createIdeaReviewFeedback(
-      req.params.ideaId,
+      req.params.ideaId as string,
       reviewerId,
       req.body,
     );
@@ -148,7 +150,7 @@ const createIdeaReviewFeedback = catchAsync(
 const getIdeaReviewFeedbacks = catchAsync(
   async (req: Request, res: Response) => {
     const result = await ModerationService.getIdeaReviewFeedbacks(
-      req.params.ideaId,
+      req.params.ideaId as string,
       req.query as Record<string, unknown>,
     );
 
@@ -165,7 +167,7 @@ const getIdeaReviewFeedbacks = catchAsync(
 const getSingleReviewFeedback = catchAsync(
   async (req: Request, res: Response) => {
     const result = await ModerationService.getSingleReviewFeedback(
-      req.params.id,
+      req.params.id as string,
     );
 
     sendResponse(res, {
@@ -181,7 +183,7 @@ const reviewIdea = catchAsync(async (req: Request, res: Response) => {
   const actorId = (req as Request & { user?: { userId: string } }).user
     ?.userId as string;
   const result = await ModerationService.reviewIdea(
-    req.params.ideaId,
+    req.params.ideaId as string,
     actorId,
     req.body,
   );
@@ -199,7 +201,7 @@ const deleteCommentByModerator = catchAsync(
     const actorId = (req as Request & { user?: { userId: string } }).user
       ?.userId as string;
     const result = await ModerationService.deleteCommentByModerator(
-      req.params.commentId,
+      req.params.commentId as string,
       actorId,
       req.body,
     );
@@ -218,7 +220,7 @@ const restoreCommentByModerator = catchAsync(
     const actorId = (req as Request & { user?: { userId: string } }).user
       ?.userId as string;
     const result = await ModerationService.restoreCommentByModerator(
-      req.params.commentId,
+      req.params.commentId as string,
       actorId,
       req.body,
     );
@@ -232,26 +234,24 @@ const restoreCommentByModerator = catchAsync(
   },
 );
 
-const getModerationActions = catchAsync(
-  async (req: Request, res: Response) => {
-    const result = await ModerationService.getModerationActions(
-      req.query as Record<string, unknown>,
-    );
+const getModerationActions = catchAsync(async (req: Request, res: Response) => {
+  const result = await ModerationService.getModerationActions(
+    req.query as Record<string, unknown>,
+  );
 
-    sendResponse(res, {
-      httpStatusCode: status.OK,
-      success: true,
-      message: "Moderation actions retrieved successfully",
-      meta: result.meta,
-      data: result.data,
-    });
-  },
-);
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Moderation actions retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 
 const getSingleModerationAction = catchAsync(
   async (req: Request, res: Response) => {
     const result = await ModerationService.getSingleModerationAction(
-      req.params.id,
+      req.params.id as string,
     );
 
     sendResponse(res, {

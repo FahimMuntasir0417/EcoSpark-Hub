@@ -6,7 +6,10 @@ import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import { ICreateCheckoutSessionPayload } from "./commerce.interface";
 
-const stripe = new Stripe(envVars.STRIPE_SECRET_KEY);
+const stripe = Stripe(envVars.STRIPE_SECRET_KEY);
+type CheckoutSession = Awaited<
+  ReturnType<typeof stripe.checkout.sessions.create>
+>;
 
 const toMinorUnit = (amount: number) => Math.round(amount * 100);
 
@@ -120,7 +123,7 @@ const ensureCustomerCanPurchase = async (ideaId: string, userId: string) => {
 };
 
 const markPurchasePaidFromCheckoutSession = async (
-  session: Stripe.Checkout.Session,
+  session: CheckoutSession,
 ) => {
   const purchaseId = session.metadata?.purchaseId;
 
@@ -184,7 +187,7 @@ const markPurchasePaidFromCheckoutSession = async (
 };
 
 const markPurchaseFailedFromCheckoutSession = async (
-  session: Stripe.Checkout.Session,
+  session: CheckoutSession,
 ) => {
   const purchaseId = session.metadata?.purchaseId;
 
@@ -261,7 +264,7 @@ const createIdeaCheckoutSession = async (
     },
   });
 
-  let session: Stripe.Checkout.Session;
+  let session: CheckoutSession;
 
   try {
     session = await stripe.checkout.sessions.create({
@@ -343,7 +346,7 @@ const verifyAndHandleWebhook = async (
 
   switch (event.type) {
     case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object as CheckoutSession;
 
       if (session.payment_status !== "paid") {
         return {
@@ -362,7 +365,7 @@ const verifyAndHandleWebhook = async (
     }
 
     case "checkout.session.async_payment_succeeded": {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object as CheckoutSession;
 
       return {
         received: true,
@@ -372,7 +375,7 @@ const verifyAndHandleWebhook = async (
     }
 
     case "checkout.session.async_payment_failed": {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object as CheckoutSession;
 
       return {
         received: true,

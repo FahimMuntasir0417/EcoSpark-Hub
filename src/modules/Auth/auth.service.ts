@@ -1,7 +1,7 @@
 import status from "http-status";
 import { JwtPayload } from "jsonwebtoken";
 
-import { auth } from "../../lib/auth";
+import { getAuth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import { tokenUtils } from "../../utils/token";
@@ -167,6 +167,7 @@ const buildTokenPayload = (user: {
 };
 
 const registerMember = async (payload: IRegisterMemberPayload) => {
+  const auth = await getAuth();
   const { name, email, password } = payload;
   const existingUser = await prisma.user.findUnique({
     where: {
@@ -251,6 +252,7 @@ const registerMember = async (payload: IRegisterMemberPayload) => {
 };
 
 const loginUser = async (payload: ILoginUserPayload) => {
+  const auth = await getAuth();
   const { email, password } = payload;
 
   const data = await auth.api.signInEmail({
@@ -394,6 +396,7 @@ const changePassword = async (
   payload: IChangePasswordPayload,
   sessionToken: string,
 ) => {
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: new Headers({
       Authorization: `Bearer ${sessionToken}`,
@@ -450,6 +453,7 @@ const changePassword = async (
 };
 
 const logoutUser = async (sessionToken: string) => {
+  const auth = await getAuth();
   const result = await auth.api.signOut({
     headers: new Headers({
       Authorization: `Bearer ${sessionToken}`,
@@ -460,6 +464,7 @@ const logoutUser = async (sessionToken: string) => {
 };
 
 const verifyEmail = async (email: string, otp: string) => {
+  const auth = await getAuth();
   const normalizedEmail = getRequiredNormalizedEmail(email);
   const normalizedOtp = getRequiredTrimmedString(otp, "OTP");
 
@@ -494,6 +499,7 @@ const verifyEmail = async (email: string, otp: string) => {
 };
 
 const forgetPassword = async (email: string) => {
+  const auth = await getAuth();
   const normalizedEmail = getRequiredNormalizedEmail(email);
 
   const existingUser = await prisma.user.findUnique({
@@ -538,6 +544,7 @@ const resetPassword = async (
   otp: string,
   newPassword: string,
 ) => {
+  const auth = await getAuth();
   const normalizedEmail = getRequiredNormalizedEmail(email);
   const normalizedOtp = getRequiredTrimmedString(otp, "OTP");
   const normalizedNewPassword = getRequiredString(newPassword, "New password");

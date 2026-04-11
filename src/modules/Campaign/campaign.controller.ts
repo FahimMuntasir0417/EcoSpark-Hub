@@ -13,7 +13,10 @@ import {
   updateCampaignSchema,
 } from "./campaign.validation";
 
-const parseJsonField = <T>(value: unknown, fieldName: string): T | undefined => {
+const parseJsonField = <T>(
+  value: unknown,
+  fieldName: string,
+): T | undefined => {
   if (typeof value !== "string" || !value.trim()) {
     return undefined;
   }
@@ -58,7 +61,9 @@ const omitUndefinedFields = <T extends Record<string, unknown>>(payload: T) => {
 
 const createCampaign = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
-  const file = req.file as (Express.Multer.File & { path?: string }) | undefined;
+  const file = req.file as
+    | (Express.Multer.File & { path?: string })
+    | undefined;
 
   if (!userId) {
     throw new AppError(
@@ -95,7 +100,10 @@ const createCampaign = catchAsync(async (req: Request, res: Response) => {
     throw parsedPayload.error;
   }
 
-  const result = await CampaignService.createCampaign(userId, parsedPayload.data);
+  const result = await CampaignService.createCampaign(
+    userId,
+    parsedPayload.data,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.CREATED,
@@ -120,7 +128,9 @@ const getAllCampaigns = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleCampaign = catchAsync(async (req: Request, res: Response) => {
-  const result = await CampaignService.getSingleCampaign(req.params.id);
+  const result = await CampaignService.getSingleCampaign(
+    req.params.id as string,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -131,7 +141,9 @@ const getSingleCampaign = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCampaignBySlug = catchAsync(async (req: Request, res: Response) => {
-  const result = await CampaignService.getCampaignBySlug(req.params.slug);
+  const result = await CampaignService.getCampaignBySlug(
+    req.params.slug as string,
+  );
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -142,7 +154,9 @@ const getCampaignBySlug = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateCampaign = catchAsync(async (req: Request, res: Response) => {
-  const file = req.file as (Express.Multer.File & { path?: string }) | undefined;
+  const file = req.file as
+    | (Express.Multer.File & { path?: string })
+    | undefined;
   const parsedData = parseJsonField<Partial<IUpdateCampaignPayload>>(
     req.body.data,
     "data",
@@ -172,7 +186,7 @@ const updateCampaign = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await CampaignService.updateCampaign(
-    req.params.id,
+    req.params.id as string,
     parsedPayload.data,
   );
 
@@ -186,7 +200,7 @@ const updateCampaign = catchAsync(async (req: Request, res: Response) => {
 
 const updateCampaignStatus = catchAsync(async (req: Request, res: Response) => {
   const result = await CampaignService.updateCampaignStatus(
-    req.params.id,
+    req.params.id as string,
     req.body,
   );
 
@@ -199,7 +213,7 @@ const updateCampaignStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteCampaign = catchAsync(async (req: Request, res: Response) => {
-  const result = await CampaignService.deleteCampaign(req.params.id);
+  const result = await CampaignService.deleteCampaign(req.params.id as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -211,7 +225,7 @@ const deleteCampaign = catchAsync(async (req: Request, res: Response) => {
 
 const getCampaignIdeas = catchAsync(async (req: Request, res: Response) => {
   const result = await CampaignService.getCampaignIdeas(
-    req.params.id,
+    req.params.id as string,
     req.query as Record<string, unknown>,
   );
 

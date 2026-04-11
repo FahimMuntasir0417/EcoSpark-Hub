@@ -30,7 +30,7 @@ const getAllTags = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleTag = catchAsync(async (req: Request, res: Response) => {
-  const result = await TagService.getSingleTag(req.params.id);
+  const result = await TagService.getSingleTag(req.params.id as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -41,7 +41,7 @@ const getSingleTag = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTagBySlug = catchAsync(async (req: Request, res: Response) => {
-  const result = await TagService.getTagBySlug(req.params.slug);
+  const result = await TagService.getTagBySlug(req.params.slug as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -52,7 +52,7 @@ const getTagBySlug = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateTag = catchAsync(async (req: Request, res: Response) => {
-  const result = await TagService.updateTag(req.params.id, req.body);
+  const result = await TagService.updateTag(req.params.id as string, req.body);
 
   sendResponse(res, {
     httpStatusCode: status.OK,
@@ -63,7 +63,7 @@ const updateTag = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteTag = catchAsync(async (req: Request, res: Response) => {
-  await TagService.deleteTag(req.params.id);
+  await TagService.deleteTag(req.params.id as string);
 
   sendResponse(res, {
     httpStatusCode: status.OK,

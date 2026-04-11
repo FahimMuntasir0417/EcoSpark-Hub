@@ -20,7 +20,10 @@ const getAuthenticatedUserId = (req: Request) => {
   return userId;
 };
 
-const parseJsonField = <T>(value: unknown, fieldName: string): T | undefined => {
+const parseJsonField = <T>(
+  value: unknown,
+  fieldName: string,
+): T | undefined => {
   if (typeof value !== "string" || !value.trim()) {
     return undefined;
   }
@@ -67,9 +70,10 @@ const createExperienceReport = catchAsync(
         }
       | undefined;
 
-    const parsedData = parseJsonField<
-      Partial<ICreateExperienceReportPayload>
-    >(req.body.data, "data");
+    const parsedData = parseJsonField<Partial<ICreateExperienceReportPayload>>(
+      req.body.data,
+      "data",
+    );
 
     const beforeImageFile = files?.beforeImage?.[0];
     const afterImageFile = files?.afterImage?.[0];
@@ -135,7 +139,7 @@ const getAllExperienceReports = catchAsync(
 const getSingleExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
     const result = await CommunityService.getSingleExperienceReport(
-      req.params.id,
+      req.params.id as string,
     );
 
     sendResponse(res, {
@@ -150,7 +154,7 @@ const getSingleExperienceReport = catchAsync(
 const getIdeaExperienceReports = catchAsync(
   async (req: Request, res: Response) => {
     const result = await CommunityService.getIdeaExperienceReports(
-      req.params.ideaId,
+      req.params.ideaId as string,
       req.query as Record<string, unknown>,
     );
 
@@ -169,7 +173,7 @@ const updateExperienceReport = catchAsync(
     const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.updateExperienceReport(
-      req.params.id,
+      req.params.id as string,
       userId,
       req.body,
     );
@@ -188,7 +192,7 @@ const deleteExperienceReport = catchAsync(
     const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.deleteExperienceReport(
-      req.params.id,
+      req.params.id as string,
       userId,
     );
 
@@ -204,7 +208,7 @@ const deleteExperienceReport = catchAsync(
 const approveExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
     const result = await CommunityService.approveExperienceReport(
-      req.params.id,
+      req.params.id as string,
     );
 
     sendResponse(res, {
@@ -218,7 +222,9 @@ const approveExperienceReport = catchAsync(
 
 const rejectExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await CommunityService.rejectExperienceReport(req.params.id);
+    const result = await CommunityService.rejectExperienceReport(
+      req.params.id as string,
+    );
 
     sendResponse(res, {
       httpStatusCode: status.OK,
@@ -232,7 +238,7 @@ const rejectExperienceReport = catchAsync(
 const featureExperienceReport = catchAsync(
   async (req: Request, res: Response) => {
     const result = await CommunityService.featureExperienceReport(
-      req.params.id,
+      req.params.id as string,
     );
 
     sendResponse(res, {
@@ -266,7 +272,7 @@ const getSingleNotification = catchAsync(
     const userId = getAuthenticatedUserId(req);
 
     const result = await CommunityService.getSingleNotification(
-      req.params.id,
+      req.params.id as string,
       userId,
     );
 
@@ -283,7 +289,7 @@ const markNotificationRead = catchAsync(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
 
   const result = await CommunityService.markNotificationRead(
-    req.params.id,
+    req.params.id as string,
     userId,
   );
 
@@ -314,7 +320,7 @@ const deleteNotification = catchAsync(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
 
   const result = await CommunityService.deleteNotification(
-    req.params.id,
+    req.params.id as string,
     userId,
   );
 

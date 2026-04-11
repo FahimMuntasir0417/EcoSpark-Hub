@@ -7,8 +7,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
 import { envVars } from "./config";
-import { toNodeHandler } from "better-auth/node";
-import { auth } from "./lib/auth";
+import { getAuthNodeHandler } from "./lib/auth";
 import { CommerceController } from "./modules/Commerce/commerce.controller";
 
 const app: Application = express();
@@ -52,7 +51,14 @@ app.use(
   }),
 );
 
-app.use("/api/auth", toNodeHandler(auth));
+app.use("/api/auth", async (req, res, next) => {
+  try {
+    const authHandler = await getAuthNodeHandler();
+    return authHandler(req, res, next);
+  } catch (error) {
+    return next(error);
+  }
+});
 
 // parsers
 app.use(express.json());

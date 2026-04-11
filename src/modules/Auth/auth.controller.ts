@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import status from "http-status";
 
-import { auth } from "../../lib/auth";
+import { getAuth } from "../../lib/auth";
 import { catchAsync } from "../../shared/catchAsync";
 import { sendResponse } from "../../shared/sendResponse";
 import { CookieUtils } from "../../utils/cookie";
@@ -277,6 +277,7 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
     return res.redirect(`${envVars.FRONTEND_URL}/login?error=oauth_failed`);
   }
 
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: {
       Cookie: `better-auth.session_token=${sessionToken}`,
