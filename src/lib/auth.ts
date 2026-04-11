@@ -2,8 +2,9 @@ import { envVars } from "../config";
 import { sendEmail } from "../utils/email";
 import { prisma } from "./prisma";
 import { Role, UserStatus } from "../generated/prisma/enums";
-type AuthInstance = ReturnType<(typeof import("better-auth"))["betterAuth"]>;
-type AuthNodeModule = typeof import("better-auth/node");
+type AuthInstance = {
+  api: any;
+};
 
 let authPromise: Promise<AuthInstance> | null = null;
 
@@ -16,13 +17,9 @@ const importEsmModule = <T>(specifier: string) => {
 const createAuth = async (): Promise<AuthInstance> => {
   const [{ betterAuth }, { prismaAdapter }, { bearer, emailOTP }] =
     await Promise.all([
-      importEsmModule<typeof import("better-auth")>("better-auth"),
-      importEsmModule<typeof import("better-auth/adapters/prisma")>(
-        "better-auth/adapters/prisma",
-      ),
-      importEsmModule<typeof import("better-auth/plugins")>(
-        "better-auth/plugins",
-      ),
+      importEsmModule<any>("better-auth"),
+      importEsmModule<any>("better-auth/adapters/prisma"),
+      importEsmModule<any>("better-auth/plugins"),
     ]);
 
   return betterAuth({
@@ -99,7 +96,15 @@ const createAuth = async (): Promise<AuthInstance> => {
       bearer(),
       emailOTP({
         overrideDefaultEmailVerification: true,
-        async sendVerificationOTP({ email, otp, type }) {
+        async sendVerificationOTP({
+          email,
+          otp,
+          type,
+        }: {
+          email: string;
+          otp: string;
+          type: string;
+        }) {
           if (type === "email-verification") {
             const user = await prisma.user.findUnique({
               where: {
@@ -183,17 +188,20 @@ const createAuth = async (): Promise<AuthInstance> => {
         },
       },
     },
-  });
+  }) as AuthInstance;
 };
 
-const getAuth = () => {
-  authPromise ??= createAuth();
+const getAuth = (): Promise<AuthInstance> => {
+  if (!authPromise) {
+    authPromise = createAuth();
+  }
+
   return authPromise;
 };
 
 const getAuthNodeHandler = async () => {
   const [{ toNodeHandler }, auth] = await Promise.all([
-    importEsmModule<AuthNodeModule>("better-auth/node"),
+    importEsmModule<any>("better-auth/node"),
     getAuth(),
   ]);
 
