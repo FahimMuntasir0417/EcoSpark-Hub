@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { TErrorResponse, TErrorSources } from "../interfaces/error.interface";
 import status from "http-status";
 import { handleZodError } from "../errors/handleZodError";
@@ -59,7 +59,7 @@ const rollbackUploadedFile = async (req: Request) => {
 
 const normalizePrismaKnownError = (
   err: Prisma.PrismaClientKnownRequestError,
-) : TNormalizedError => {
+): TNormalizedError => {
   let statusCode: number = status.INTERNAL_SERVER_ERROR;
   let message = "Database request failed";
   let errorSources: TErrorSources[] = [
@@ -135,7 +135,6 @@ export const globalErrorHandler = async (
   err: unknown,
   req: Request,
   res: Response,
-  _next: NextFunction,
 ) => {
   let errorSources: TErrorSources[] = [];
   let statusCode: number = status.INTERNAL_SERVER_ERROR;

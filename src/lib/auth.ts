@@ -23,7 +23,7 @@ export const auth = betterAuth({
     google: {
       clientId: envVars.GOOGLE_CLIENT_ID,
       clientSecret: envVars.GOOGLE_CLIENT_SECRET,
-      // callbackUrl: envVars.GOOGLE_CALLBACK_URL,
+      callbackUrl: envVars.GOOGLE_CALLBACK_URL,
       mapProfileToUser: () => {
         return {
           role: Role.MEMBER,
