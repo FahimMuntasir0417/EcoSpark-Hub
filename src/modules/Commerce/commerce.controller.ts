@@ -41,6 +41,8 @@ const getAllPurchases = catchAsync(async (req: Request, res: Response) => {
 const getSinglePurchase = catchAsync(async (req: Request, res: Response) => {
   const result = await CommerceService.getSinglePurchase(
     req.params.id as string,
+    ((req.query.session_id as string | undefined) ??
+      (req.query.sessionId as string | undefined)) as string | undefined,
   );
 
   sendResponse(res, {

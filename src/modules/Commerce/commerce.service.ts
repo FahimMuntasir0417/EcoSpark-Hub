@@ -120,7 +120,24 @@ const getAllPurchases = async (query: Record<string, unknown>) => {
   };
 };
 
-const getSinglePurchase = async (id: string) => {
+const getSinglePurchase = async (id: string, sessionId?: string) => {
+  const existingPurchase = await ensurePurchaseExists(id);
+
+  const reconciliationSessionId =
+    sessionId ??
+    (existingPurchase.status === "PENDING" &&
+    existingPurchase.paymentProvider === "STRIPE" &&
+    existingPurchase.providerPaymentId?.startsWith("cs_")
+      ? existingPurchase.providerPaymentId
+      : undefined);
+
+  if (reconciliationSessionId) {
+    await StripeCheckoutService.reconcilePendingPurchaseFromCheckoutSession(
+      id,
+      reconciliationSessionId,
+    );
+  }
+
   const purchase = await prisma.ideaPurchase.findUnique({
     where: { id },
     include: purchaseInclude,

@@ -1,0 +1,113 @@
+{
+  "module": "User",
+  "baseUrl": "/api/v1/users",
+  "endpoints": [
+    {
+      "name": "Get My Profile",
+      "method": "GET",
+      "url": "/api/v1/users/me"
+    },
+    {
+      "name": "Update My Profile",
+      "method": "PATCH",
+      "url": "/api/v1/users/me",
+      "contentType": "multipart/form-data",
+      "body": {
+        "name": "Updated Member",
+        "contactNumber": "+8801712345678",
+        "address": "Dhaka, Bangladesh",
+        "image": "<file>"
+      },
+      "notes": "You can also send a JSON string in the `data` field instead of direct fields."
+    },
+    {
+      "name": "Get All Users",
+      "method": "GET",
+      "url": "/api/v1/users",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "member",
+        "role": "MEMBER",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "name": "Get My Votes",
+      "method": "GET",
+      "url": "/api/v1/users/me/votes",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "type": "UP"
+      }
+    },
+    {
+      "name": "Create My Vote",
+      "method": "POST",
+      "url": "/api/v1/users/me/votes",
+      "body": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij",
+        "type": "UP"
+      }
+    },
+    {
+      "name": "Update My Vote",
+      "method": "PATCH",
+      "url": "/api/v1/users/me/votes/:id",
+      "params": {
+        "id": "cm_vote_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "type": "DOWN"
+      }
+    },
+    {
+      "name": "Delete My Vote",
+      "method": "DELETE",
+      "url": "/api/v1/users/me/votes/:id",
+      "params": {
+        "id": "cm_vote_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get My Comments",
+      "method": "GET",
+      "url": "/api/v1/users/me/comments",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "promising"
+      }
+    },
+    {
+      "name": "Create My Comment",
+      "method": "POST",
+      "url": "/api/v1/users/me/comments",
+      "body": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij",
+        "content": "This idea looks promising."
+      },
+      "notes": "For a reply, send `parentId` instead of `ideaId`."
+    },
+    {
+      "name": "Update My Comment",
+      "method": "PATCH",
+      "url": "/api/v1/users/me/comments/:id",
+      "params": {
+        "id": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "content": "Updated comment content."
+      }
+    },
+    {
+      "name": "Delete My Comment",
+      "method": "DELETE",
+      "url": "/api/v1/users/me/comments/:id",
+      "params": {
+        "id": "cm_comment_01hxyz123abc456def789ghij"
+      }
+    }
+  ]
+}

@@ -16,15 +16,38 @@ const toMinorUnit = (amount: number) => Math.round(amount * 100);
 const toJson = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 
+const appendQueryParams = (
+  baseUrl: string,
+  params: Array<{ key: string; value: string; preserveValue?: boolean }>,
+) => {
+  const [urlWithoutHash, hash = ""] = baseUrl.split("#", 2);
+  const separator = urlWithoutHash.includes("?") ? "&" : "?";
+  const query = params
+    .map(({ key, value, preserveValue }) => {
+      const encodedKey = encodeURIComponent(key);
+      const encodedValue = preserveValue ? value : encodeURIComponent(value);
+
+      return `${encodedKey}=${encodedValue}`;
+    })
+    .join("&");
+
+  return `${urlWithoutHash}${separator}${query}${hash ? `#${hash}` : ""}`;
+};
+
 const buildSuccessUrl = (purchaseId: string, override?: string) => {
-  const url = new URL(
-    override ?? envVars.STRIPE_SUCCESS_URL ?? `${envVars.FRONTEND_URL}/payments/success`,
-  );
+  const baseUrl =
+    override ??
+    envVars.STRIPE_SUCCESS_URL ??
+    `${envVars.FRONTEND_URL}/payments/success`;
 
-  url.searchParams.set("purchaseId", purchaseId);
-  url.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
-
-  return url.toString();
+  return appendQueryParams(baseUrl, [
+    { key: "purchaseId", value: purchaseId },
+    {
+      key: "session_id",
+      value: "{CHECKOUT_SESSION_ID}",
+      preserveValue: true,
+    },
+  ]);
 };
 
 const buildCancelUrl = (ideaId: string, override?: string) => {
@@ -32,15 +55,13 @@ const buildCancelUrl = (ideaId: string, override?: string) => {
     return override;
   }
 
-  if (envVars.STRIPE_CANCEL_URL) {
-    const url = new URL(envVars.STRIPE_CANCEL_URL);
-    url.searchParams.set("checkout", "cancelled");
-    url.searchParams.set("ideaId", ideaId);
+  const baseUrl =
+    envVars.STRIPE_CANCEL_URL ?? `${envVars.FRONTEND_URL}/ideas/${ideaId}`;
 
-    return url.toString();
-  }
-
-  return `${envVars.FRONTEND_URL}/ideas/${ideaId}?checkout=cancelled`;
+  return appendQueryParams(baseUrl, [
+    { key: "checkout", value: "cancelled" },
+    { key: "ideaId", value: ideaId },
+  ]);
 };
 
 const ensureIdeaCanBePurchased = async (ideaId: string) => {
@@ -245,6 +266,45 @@ const markPurchaseFailedFromCheckoutSession = async (
   });
 };
 
+const reconcilePendingPurchaseFromCheckoutSession = async (
+  purchaseId: string,
+  sessionId: string,
+) => {
+  const purchase = await prisma.ideaPurchase.findUnique({
+    where: { id: purchaseId },
+  });
+
+  if (!purchase) {
+    throw new AppError(status.NOT_FOUND, "Purchase not found");
+  }
+
+  if (purchase.paymentProvider !== "STRIPE" || purchase.status !== "PENDING") {
+    return purchase;
+  }
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const metadataPurchaseId = session.metadata?.purchaseId ?? null;
+  const clientReferenceId = session.client_reference_id ?? null;
+
+  if (
+    (metadataPurchaseId && metadataPurchaseId !== purchaseId) ||
+    (clientReferenceId && clientReferenceId !== purchaseId)
+  ) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "Checkout session does not belong to this purchase",
+    );
+  }
+
+  if (session.payment_status === "paid") {
+    await markPurchasePaidFromCheckoutSession(session);
+  }
+
+  return prisma.ideaPurchase.findUnique({
+    where: { id: purchaseId },
+  });
+};
+
 const createIdeaCheckoutSession = async (
   ideaId: string,
   userId: string,
@@ -322,6 +382,13 @@ const createIdeaCheckoutSession = async (
     throw new AppError(status.BAD_GATEWAY, "Stripe did not return a checkout URL");
   }
 
+  await prisma.ideaPurchase.update({
+    where: { id: purchase.id },
+    data: {
+      providerPaymentId: session.id,
+    },
+  });
+
   return {
     purchaseId: purchase.id,
     checkoutUrl: session.url,
@@ -396,4 +463,5 @@ const verifyAndHandleWebhook = async (
 export const StripeCheckoutService = {
   createIdeaCheckoutSession,
   verifyAndHandleWebhook,
+  reconcilePendingPurchaseFromCheckoutSession,
 };

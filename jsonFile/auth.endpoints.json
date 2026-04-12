@@ -1,0 +1,130 @@
+{
+  "module": "Auth",
+  "baseUrl": "/api/v1/auth",
+  "endpoints": [
+    {
+      "name": "Register Member",
+      "method": "POST",
+      "url": "/api/v1/auth/register",
+      "body": {
+        "name": "Eco Member",
+        "email": "member@example.com",
+        "password": "StrongPass123"
+      },
+      "notes": "Creates a member account and sets auth cookies on success."
+    },
+    {
+      "name": "Login User",
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "body": {
+        "email": "member@example.com",
+        "password": "StrongPass123"
+      },
+      "notes": "Returns tokens and sets auth cookies on success."
+    },
+    {
+      "name": "Get My Profile",
+      "method": "GET",
+      "url": "/api/v1/auth/users/me"
+    },
+    {
+      "name": "Update My Profile",
+      "method": "PATCH",
+      "url": "/api/v1/auth/users/me",
+      "contentType": "multipart/form-data",
+      "body": {
+        "name": "Updated Member",
+        "contactNumber": "+8801712345678",
+        "address": "Dhaka, Bangladesh",
+        "image": "<file>"
+      },
+      "notes": "You can also send a JSON string in the `data` field instead of direct fields."
+    },
+    {
+      "name": "Get All Users",
+      "method": "GET",
+      "url": "/api/v1/auth/users",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "member",
+        "role": "MEMBER",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "name": "Refresh Token",
+      "method": "POST",
+      "url": "/api/v1/auth/refresh-token",
+      "notes": "Requires `refreshToken` and `better-auth.session_token` cookies."
+    },
+    {
+      "name": "Change Password",
+      "method": "POST",
+      "url": "/api/v1/auth/change-password",
+      "body": {
+        "currentPassword": "StrongPass123",
+        "newPassword": "NewStrongPass456"
+      },
+      "notes": "Requires `better-auth.session_token` cookie."
+    },
+    {
+      "name": "Logout User",
+      "method": "POST",
+      "url": "/api/v1/auth/logout",
+      "notes": "Requires `better-auth.session_token` cookie."
+    },
+    {
+      "name": "Verify Email",
+      "method": "POST",
+      "url": "/api/v1/auth/verify-email",
+      "body": {
+        "email": "member@example.com",
+        "otp": "123456"
+      }
+    },
+    {
+      "name": "Forget Password",
+      "method": "POST",
+      "url": "/api/v1/auth/forget-password",
+      "body": {
+        "email": "member@example.com"
+      }
+    },
+    {
+      "name": "Reset Password",
+      "method": "POST",
+      "url": "/api/v1/auth/reset-password",
+      "body": {
+        "email": "member@example.com",
+        "otp": "123456",
+        "newPassword": "ResetPass789"
+      }
+    },
+    {
+      "name": "Start Google Login",
+      "method": "GET",
+      "url": "/api/v1/auth/login/google",
+      "query": {
+        "redirect": "/dashboard"
+      }
+    },
+    {
+      "name": "Google Login Success",
+      "method": "GET",
+      "url": "/api/v1/auth/google/success",
+      "query": {
+        "redirect": "/dashboard"
+      }
+    },
+    {
+      "name": "OAuth Error Redirect",
+      "method": "GET",
+      "url": "/api/v1/auth/oauth/error",
+      "query": {
+        "error": "oauth_failed"
+      }
+    }
+  ]
+}

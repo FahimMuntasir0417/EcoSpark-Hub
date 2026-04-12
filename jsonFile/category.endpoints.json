@@ -1,0 +1,70 @@
+{
+  "module": "Category",
+  "baseUrl": "/api/v1/categories",
+  "endpoints": [
+    {
+      "name": "Create Category",
+      "method": "POST",
+      "url": "/api/v1/categories",
+      "body": {
+        "name": "Energy",
+        "slug": "energy",
+        "description": "Ideas related to energy efficiency and renewable energy",
+        "icon": "bolt",
+        "color": "#00AAFF",
+        "sortOrder": 1,
+        "isActive": true,
+        "seoTitle": "Energy Category",
+        "seoDescription": "Energy category for eco innovation"
+      }
+    },
+    {
+      "name": "Get All Categories",
+      "method": "GET",
+      "url": "/api/v1/categories",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "energy",
+        "isActive": true
+      }
+    },
+    {
+      "name": "Get Category By Slug",
+      "method": "GET",
+      "url": "/api/v1/categories/slug/:slug",
+      "params": {
+        "slug": "energy"
+      }
+    },
+    {
+      "name": "Get Single Category",
+      "method": "GET",
+      "url": "/api/v1/categories/:id",
+      "params": {
+        "id": "cm_category_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Update Category",
+      "method": "PATCH",
+      "url": "/api/v1/categories/:id",
+      "params": {
+        "id": "cm_category_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "description": "Updated energy category",
+        "color": "#22CC88",
+        "isActive": true
+      }
+    },
+    {
+      "name": "Delete Category",
+      "method": "DELETE",
+      "url": "/api/v1/categories/:id",
+      "params": {
+        "id": "cm_category_01hxyz123abc456def789ghij"
+      }
+    }
+  ]
+}

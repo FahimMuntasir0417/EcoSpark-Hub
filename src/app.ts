@@ -9,8 +9,18 @@ import fs from "fs";
 import { envVars } from "./config";
 import { getAuthNodeHandler } from "./lib/auth";
 import { CommerceController } from "./modules/Commerce/commerce.controller";
+import { getAllowedOrigins } from "./utils/origin";
 
 const app: Application = express();
+
+const allowedOrigins = getAllowedOrigins(
+  envVars.FRONTEND_URL,
+  envVars.BETTER_AUTH_URL,
+  envVars.STRIPE_SUCCESS_URL,
+  envVars.STRIPE_CANCEL_URL,
+  "http://localhost:3000",
+  "http://localhost:5000",
+);
 
 const resolveViewsPath = () => {
   const candidates = [
@@ -39,12 +49,7 @@ app.post(
 
 app.use(
   cors({
-    origin: [
-      envVars.FRONTEND_URL,
-      envVars.BETTER_AUTH_URL,
-      "http://localhost:3000",
-      "http://localhost:5000",
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -54,7 +59,8 @@ app.use(
 app.use("/api/auth", async (req, res, next) => {
   try {
     const authHandler = await getAuthNodeHandler();
-    return authHandler(req, res, next);
+    await authHandler(req, res);
+    return;
   } catch (error) {
     return next(error);
   }
@@ -65,7 +71,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.text());
 app.use(cookieParser());
-app.use(cors());
 
 // application routes
 // app.use('/api/v1', router);

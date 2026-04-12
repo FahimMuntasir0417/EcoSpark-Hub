@@ -257,6 +257,15 @@ const getAllIdeas = async (query: Record<string, unknown>) => {
       include: {
         author: true,
         category: true,
+        media: true,
+        attachments: true,
+        purchases: true,
+        bookmarks: true,
+        experienceReports: true,
+        tags: true,
+        votes: true,
+        reports: true,
+
         campaign: true,
       },
     }),

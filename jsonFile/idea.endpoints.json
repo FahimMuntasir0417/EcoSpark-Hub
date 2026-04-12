@@ -1,0 +1,227 @@
+{
+  "module": "Idea",
+  "baseUrl": "/api/v1/ideas",
+  "endpoints": [
+    {
+      "name": "Create Idea",
+      "method": "POST",
+      "url": "/api/v1/ideas",
+      "body": {
+        "title": "Smart Compost Bin",
+        "slug": "smart-compost-bin",
+        "excerpt": "A compact smart composting solution for urban homes",
+        "problemStatement": "Food waste from households is not processed efficiently.",
+        "proposedSolution": "Use a smart compost bin with moisture and temperature tracking.",
+        "description": "Detailed explanation of the idea and how it works.",
+        "implementationSteps": "Build prototype, test sensors, deploy pilot.",
+        "requiredResources": "Sensors, bin materials, software dashboard",
+        "expectedBenefits": "Less waste and better compost output",
+        "targetAudience": "Urban households",
+        "coverImageUrl": "https://example.com/ideas/compost-bin-cover.jpg",
+        "videoUrl": "https://example.com/ideas/compost-bin-demo.mp4",
+        "visibility": "PUBLIC",
+        "accessType": "FREE",
+        "currency": "USD",
+        "categoryId": "cm_category_01hxyz123abc456def789ghij",
+        "campaignId": "cm_campaign_01hxyz123abc456def789ghij",
+        "estimatedCost": 500,
+        "implementationEffort": 3,
+        "expectedImpact": 4,
+        "timeToImplementDays": 30,
+        "resourceAvailability": 3,
+        "innovationLevel": 4,
+        "scalabilityScore": 4,
+        "feasibilityScore": 8.5,
+        "impactScore": 8.8,
+        "ecoScore": 9.1,
+        "estimatedWasteReductionKgMonth": 120,
+        "estimatedCo2ReductionKgMonth": 45,
+        "estimatedCostSavingsMonth": 20,
+        "estimatedWaterSavedLitersMonth": 0,
+        "estimatedEnergySavedKwhMonth": 5,
+        "seoTitle": "Smart Compost Bin",
+        "seoDescription": "Urban composting with sensors and tracking",
+        "tagIds": [
+          "cm_tag_01hxyz123abc456def789ghijk",
+          "cm_tag_01hxyz123abc456def789ghijl"
+        ]
+      }
+    },
+    {
+      "name": "Get All Ideas",
+      "method": "GET",
+      "url": "/api/v1/ideas",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "compost",
+        "status": "APPROVED",
+        "categoryId": "cm_category_01hxyz123abc456def789ghij",
+        "isFeatured": true
+      }
+    },
+    {
+      "name": "Get Idea By Slug",
+      "method": "GET",
+      "url": "/api/v1/ideas/slug/:slug",
+      "params": {
+        "slug": "smart-compost-bin"
+      }
+    },
+    {
+      "name": "Get Single Idea",
+      "method": "GET",
+      "url": "/api/v1/ideas/:id",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Update Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "description": "Updated idea description",
+        "expectedBenefits": "Reduced waste and stronger soil quality",
+        "tagIds": [
+          "cm_tag_01hxyz123abc456def789ghijk"
+        ]
+      }
+    },
+    {
+      "name": "Delete Idea",
+      "method": "DELETE",
+      "url": "/api/v1/ideas/:id",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Submit Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/submit",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Approve Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/approve",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Reject Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/reject",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "status": "REJECTED",
+        "rejectionFeedback": "Please provide stronger feasibility evidence.",
+        "adminNote": "Needs more implementation details."
+      }
+    },
+    {
+      "name": "Archive Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/archive",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Publish Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/publish",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Feature Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/feature",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Highlight Idea",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/highlight",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Update Idea Tags",
+      "method": "PATCH",
+      "url": "/api/v1/ideas/:id/tags",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "tagIds": [
+          "cm_tag_01hxyz123abc456def789ghijk",
+          "cm_tag_01hxyz123abc456def789ghijl"
+        ]
+      }
+    },
+    {
+      "name": "Add Idea Attachment",
+      "method": "POST",
+      "url": "/api/v1/ideas/:id/attachments",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "contentType": "multipart/form-data",
+      "body": {
+        "title": "Prototype Document",
+        "file": "<file>"
+      }
+    },
+    {
+      "name": "Delete Idea Attachment",
+      "method": "DELETE",
+      "url": "/api/v1/ideas/:id/attachments/:attachmentId",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij",
+        "attachmentId": "cm_attachment_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Add Idea Media",
+      "method": "POST",
+      "url": "/api/v1/ideas/:id/media",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "contentType": "multipart/form-data",
+      "body": {
+        "type": "IMAGE",
+        "altText": "Prototype photo",
+        "caption": "First prototype",
+        "sortOrder": 0,
+        "isPrimary": true,
+        "file": "<file>"
+      },
+      "notes": "You can also send `url` and `type` without uploading a file."
+    },
+    {
+      "name": "Delete Idea Media",
+      "method": "DELETE",
+      "url": "/api/v1/ideas/:id/media/:mediaId",
+      "params": {
+        "id": "cm_idea_01hxyz123abc456def789ghij",
+        "mediaId": "cm_media_01hxyz123abc456def789ghij"
+      }
+    }
+  ]
+}

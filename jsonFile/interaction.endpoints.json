@@ -1,0 +1,126 @@
+{
+  "module": "Interaction",
+  "baseUrl": "/api/v1/interactions",
+  "endpoints": [
+    {
+      "name": "Vote Idea",
+      "method": "POST",
+      "url": "/api/v1/interactions/ideas/:ideaId/votes",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "type": "UP"
+      }
+    },
+    {
+      "name": "Update Vote",
+      "method": "PATCH",
+      "url": "/api/v1/interactions/ideas/:ideaId/votes",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "type": "DOWN"
+      }
+    },
+    {
+      "name": "Remove Vote",
+      "method": "DELETE",
+      "url": "/api/v1/interactions/ideas/:ideaId/votes",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Create Comment",
+      "method": "POST",
+      "url": "/api/v1/interactions/ideas/:ideaId/comments",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "content": "This idea looks promising."
+      }
+    },
+    {
+      "name": "Get Idea Comments",
+      "method": "GET",
+      "url": "/api/v1/interactions/ideas/:ideaId/comments",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    },
+    {
+      "name": "Update Comment",
+      "method": "PATCH",
+      "url": "/api/v1/interactions/comments/:id",
+      "params": {
+        "id": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "content": "Updated comment content."
+      }
+    },
+    {
+      "name": "Delete Comment",
+      "method": "DELETE",
+      "url": "/api/v1/interactions/comments/:id",
+      "params": {
+        "id": "cm_comment_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Reply To Comment",
+      "method": "POST",
+      "url": "/api/v1/interactions/comments/:id/replies",
+      "params": {
+        "id": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "content": "Thanks for the feedback."
+      }
+    },
+    {
+      "name": "Get Comment Replies",
+      "method": "GET",
+      "url": "/api/v1/interactions/comments/:id/replies",
+      "params": {
+        "id": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    },
+    {
+      "name": "Bookmark Idea",
+      "method": "POST",
+      "url": "/api/v1/interactions/ideas/:ideaId/bookmark",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Remove Bookmark",
+      "method": "DELETE",
+      "url": "/api/v1/interactions/ideas/:ideaId/bookmark",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get My Bookmarks",
+      "method": "GET",
+      "url": "/api/v1/interactions/users/me/bookmarks",
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    }
+  ]
+}

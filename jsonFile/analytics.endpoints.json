@@ -1,0 +1,24 @@
+{
+  "module": "Analytics",
+  "baseUrl": "/api/v1/analytics",
+  "endpoints": [
+    {
+      "name": "Get Member Analytics",
+      "method": "GET",
+      "url": "/api/v1/analytics/member",
+      "notes": "Requires an authenticated user with the MEMBER role."
+    },
+    {
+      "name": "Get Scientist Analytics",
+      "method": "GET",
+      "url": "/api/v1/analytics/scientist",
+      "notes": "Requires an authenticated user with the SCIENTIST role."
+    },
+    {
+      "name": "Get Admin Analytics",
+      "method": "GET",
+      "url": "/api/v1/analytics/admin",
+      "notes": "Requires an authenticated user with the ADMIN or SUPER_ADMIN role."
+    }
+  ]
+}

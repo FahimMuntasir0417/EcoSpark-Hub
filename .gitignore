@@ -2,5 +2,5 @@ node_modules
 dist
 .env
 /src/generated
-jsonFile
+# jsonFile
 .vercel

@@ -5,6 +5,7 @@ import { Role, UserStatus } from "../generated/prisma/enums";
 import path from "path";
 import { createRequire } from "module";
 import { pathToFileURL } from "url";
+import { getAllowedOrigins } from "../utils/origin";
 
 type AuthModuleSpecifier =
   | "better-auth"
@@ -60,6 +61,15 @@ const importEsmModule = <T>(specifier: AuthModuleSpecifier) => {
     esmModuleUrls[specifier],
   ) as Promise<T>;
 };
+
+const trustedOrigins = getAllowedOrigins(
+  process.env.BETTER_AUTH_URL,
+  envVars.FRONTEND_URL,
+  envVars.STRIPE_SUCCESS_URL,
+  envVars.STRIPE_CANCEL_URL,
+  "http://localhost:3000",
+  "http://localhost:5000",
+);
 
 const createAuth = async () => {
   const [{ betterAuth }, { prismaAdapter }, { bearer, emailOTP }] =
@@ -208,10 +218,7 @@ const createAuth = async () => {
       signIn: `${envVars.BETTER_AUTH_URL}/api/v1/auth/google/success`,
     },
 
-    trustedOrigins: [
-      process.env.BETTER_AUTH_URL || "http://localhost:5000",
-      envVars.FRONTEND_URL,
-    ],
+    trustedOrigins,
 
     advanced: {
       // disableCSRFCheck: true,

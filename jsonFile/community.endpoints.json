@@ -1,0 +1,186 @@
+{
+  "module": "Community",
+  "baseUrl": "/api/v1/community",
+  "endpoints": [
+    {
+      "name": "Create Experience Report",
+      "method": "POST",
+      "url": "/api/v1/community/experience-reports",
+      "contentType": "multipart/form-data",
+      "formData": {
+        "beforeImage": "<FILE:image>",
+        "afterImage": "<FILE:image>",
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij",
+        "title": "Community Composting Pilot",
+        "summary": "A short summary of the experience",
+        "outcome": "Reduced organic waste by 30 percent",
+        "challenges": "Initial volunteer shortage",
+        "measurableResult": "120kg waste diverted per month",
+        "adoptedScale": "Neighborhood",
+        "location": "Dhaka",
+        "effectivenessRating": 8
+      },
+      "formDataUsingDataField": {
+        "beforeImage": "<FILE:image>",
+        "afterImage": "<FILE:image>",
+        "data": "{\"ideaId\":\"cm_idea_01hxyz123abc456def789ghij\",\"title\":\"Community Composting Pilot\",\"summary\":\"A short summary of the experience\",\"outcome\":\"Reduced organic waste by 30 percent\",\"challenges\":\"Initial volunteer shortage\",\"measurableResult\":\"120kg waste diverted per month\",\"adoptedScale\":\"Neighborhood\",\"location\":\"Dhaka\",\"effectivenessRating\":8}"
+      },
+      "notes": "Use multer fields `beforeImage` and `afterImage` to upload two images. The uploaded files are stored and saved as `beforeImageUrl` and `afterImageUrl` on the report. If you already have hosted URLs, you can still send JSON with those two URL fields instead of files.",
+      "body": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij",
+        "title": "Community Composting Pilot",
+        "summary": "A short summary of the experience",
+        "outcome": "Reduced organic waste by 30 percent",
+        "challenges": "Initial volunteer shortage",
+        "measurableResult": "120kg waste diverted per month",
+        "adoptedScale": "Neighborhood",
+        "location": "Dhaka",
+        "effectivenessRating": 8,
+        "beforeImageUrl": "https://example.com/reports/before.jpg",
+        "afterImageUrl": "https://example.com/reports/after.jpg"
+      }
+    },
+    {
+      "name": "Get All Experience Reports",
+      "method": "GET",
+      "url": "/api/v1/community/experience-reports",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "status": "APPROVED",
+        "isFeatured": true
+      }
+    },
+    {
+      "name": "Get Single Experience Report",
+      "method": "GET",
+      "url": "/api/v1/community/experience-reports/:id",
+      "params": {
+        "id": "cm_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get Experience Reports By Idea",
+      "method": "GET",
+      "url": "/api/v1/community/ideas/:ideaId/experience-reports",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    },
+    {
+      "name": "Update Experience Report",
+      "method": "PATCH",
+      "url": "/api/v1/community/experience-reports/:id",
+      "params": {
+        "id": "cm_report_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "summary": "Updated experience summary",
+        "outcome": "Improved compost adoption",
+        "effectivenessRating": 9
+      }
+    },
+    {
+      "name": "Delete Experience Report",
+      "method": "DELETE",
+      "url": "/api/v1/community/experience-reports/:id",
+      "params": {
+        "id": "cm_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Approve Experience Report",
+      "method": "PATCH",
+      "url": "/api/v1/community/experience-reports/:id/approve",
+      "params": {
+        "id": "cm_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Reject Experience Report",
+      "method": "PATCH",
+      "url": "/api/v1/community/experience-reports/:id/reject",
+      "params": {
+        "id": "cm_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Feature Experience Report",
+      "method": "PATCH",
+      "url": "/api/v1/community/experience-reports/:id/feature",
+      "params": {
+        "id": "cm_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get My Notifications",
+      "method": "GET",
+      "url": "/api/v1/community/notifications",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "isRead": false
+      }
+    },
+    {
+      "name": "Get Single Notification",
+      "method": "GET",
+      "url": "/api/v1/community/notifications/:id",
+      "params": {
+        "id": "cm_notification_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Mark Notification Read",
+      "method": "PATCH",
+      "url": "/api/v1/community/notifications/:id/read",
+      "params": {
+        "id": "cm_notification_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Mark All Notifications Read",
+      "method": "PATCH",
+      "url": "/api/v1/community/notifications/read-all"
+    },
+    {
+      "name": "Delete Notification",
+      "method": "DELETE",
+      "url": "/api/v1/community/notifications/:id",
+      "params": {
+        "id": "cm_notification_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Subscribe Newsletter",
+      "method": "POST",
+      "url": "/api/v1/community/newsletter/subscribe",
+      "body": {
+        "email": "member@example.com",
+        "source": "homepage"
+      }
+    },
+    {
+      "name": "Unsubscribe Newsletter",
+      "method": "POST",
+      "url": "/api/v1/community/newsletter/unsubscribe",
+      "body": {
+        "email": "member@example.com"
+      }
+    },
+    {
+      "name": "Get Newsletter Subscriptions",
+      "method": "GET",
+      "url": "/api/v1/community/newsletter/subscriptions",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "isActive": true
+      }
+    }
+  ]
+}

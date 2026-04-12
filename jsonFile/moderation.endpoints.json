@@ -1,0 +1,177 @@
+{
+  "module": "Moderation",
+  "baseUrl": "/api/v1/moderation",
+  "endpoints": [
+    {
+      "name": "Report Idea",
+      "method": "POST",
+      "url": "/api/v1/moderation/ideas/:ideaId/reports",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "reason": "SPAM",
+        "note": "Looks duplicated and low quality."
+      }
+    },
+    {
+      "name": "Report Comment",
+      "method": "POST",
+      "url": "/api/v1/moderation/comments/:commentId/reports",
+      "params": {
+        "commentId": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "reason": "ABUSE",
+        "note": "Contains abusive language."
+      }
+    },
+    {
+      "name": "Get Idea Reports",
+      "method": "GET",
+      "url": "/api/v1/moderation/reports/ideas",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "Get Single Idea Report",
+      "method": "GET",
+      "url": "/api/v1/moderation/reports/ideas/:id",
+      "params": {
+        "id": "cm_idea_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Review Idea Report",
+      "method": "PATCH",
+      "url": "/api/v1/moderation/reports/ideas/:id/review",
+      "params": {
+        "id": "cm_idea_report_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "status": "APPROVED",
+        "note": "Report reviewed and resolved."
+      }
+    },
+    {
+      "name": "Get Comment Reports",
+      "method": "GET",
+      "url": "/api/v1/moderation/reports/comments",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "status": "PENDING"
+      }
+    },
+    {
+      "name": "Get Single Comment Report",
+      "method": "GET",
+      "url": "/api/v1/moderation/reports/comments/:id",
+      "params": {
+        "id": "cm_comment_report_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Review Comment Report",
+      "method": "PATCH",
+      "url": "/api/v1/moderation/reports/comments/:id/review",
+      "params": {
+        "id": "cm_comment_report_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "status": "REJECTED",
+        "note": "Insufficient evidence."
+      }
+    },
+    {
+      "name": "Create Idea Review Feedback",
+      "method": "POST",
+      "url": "/api/v1/moderation/ideas/:ideaId/review-feedback",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "feedbackType": "IMPROVEMENT",
+        "title": "Improve Metrics",
+        "message": "Please add stronger measurable outcomes.",
+        "isVisibleToAuthor": true
+      }
+    },
+    {
+      "name": "Get Idea Review Feedbacks",
+      "method": "GET",
+      "url": "/api/v1/moderation/ideas/:ideaId/review-feedback",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    },
+    {
+      "name": "Get Single Review Feedback",
+      "method": "GET",
+      "url": "/api/v1/moderation/review-feedback/:id",
+      "params": {
+        "id": "cm_feedback_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Review Idea",
+      "method": "POST",
+      "url": "/api/v1/moderation/ideas/:ideaId/review",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "action": "REJECTED",
+        "note": "Needs more evidence",
+        "rejectionFeedback": "Please add a clearer implementation plan."
+      }
+    },
+    {
+      "name": "Delete Comment By Moderator",
+      "method": "POST",
+      "url": "/api/v1/moderation/comments/:commentId/delete",
+      "params": {
+        "commentId": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "note": "Violates community policy."
+      }
+    },
+    {
+      "name": "Restore Comment By Moderator",
+      "method": "POST",
+      "url": "/api/v1/moderation/comments/:commentId/restore",
+      "params": {
+        "commentId": "cm_comment_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "note": "Comment restored after review."
+      }
+    },
+    {
+      "name": "Get Moderation Actions",
+      "method": "GET",
+      "url": "/api/v1/moderation/actions",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "actionType": "REPORT_RESOLVED"
+      }
+    },
+    {
+      "name": "Get Single Moderation Action",
+      "method": "GET",
+      "url": "/api/v1/moderation/actions/:id",
+      "params": {
+        "id": "cm_action_01hxyz123abc456def789ghij"
+      }
+    }
+  ]
+}

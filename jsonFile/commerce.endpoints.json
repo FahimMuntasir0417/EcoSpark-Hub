@@ -1,0 +1,89 @@
+{
+  "module": "Commerce",
+  "baseUrl": "/api/v1/commerce",
+  "endpoints": [
+    {
+      "name": "Create Idea Checkout Session",
+      "method": "POST",
+      "url": "/api/v1/commerce/ideas/:ideaId/checkout-session",
+      "params": {
+        "ideaId": "cm_idea_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "successUrl": "https://example.com/payment/success",
+        "cancelUrl": "https://example.com/payment/cancel"
+      }
+    },
+    {
+      "name": "Get All Purchases",
+      "method": "GET",
+      "url": "/api/v1/commerce/purchases",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "status": "PAID"
+      }
+    },
+    {
+      "name": "Get Single Purchase",
+      "method": "GET",
+      "url": "/api/v1/commerce/purchases/:id",
+      "params": {
+        "id": "cm_purchase_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get My Purchases",
+      "method": "GET",
+      "url": "/api/v1/commerce/users/me/purchases",
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    },
+    {
+      "name": "Refund Purchase",
+      "method": "PATCH",
+      "url": "/api/v1/commerce/purchases/:id/refund",
+      "params": {
+        "id": "cm_purchase_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "reason": "Customer requested refund"
+      }
+    },
+    {
+      "name": "Cancel Purchase",
+      "method": "PATCH",
+      "url": "/api/v1/commerce/purchases/:id/cancel",
+      "params": {
+        "id": "cm_purchase_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get All Transactions",
+      "method": "GET",
+      "url": "/api/v1/commerce/transactions",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "status": "PAID"
+      }
+    },
+    {
+      "name": "Get Single Transaction",
+      "method": "GET",
+      "url": "/api/v1/commerce/transactions/:id",
+      "params": {
+        "id": "cm_tx_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Stripe Webhook",
+      "method": "POST",
+      "url": "/api/v1/commerce/payments/webhook/stripe",
+      "contentType": "application/json",
+      "notes": "Stripe sends the raw request body and `stripe-signature` header."
+    }
+  ]
+}

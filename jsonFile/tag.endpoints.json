@@ -1,0 +1,61 @@
+{
+  "module": "Tag",
+  "baseUrl": "/api/v1/tags",
+  "endpoints": [
+    {
+      "name": "Create Tag",
+      "method": "POST",
+      "url": "/api/v1/tags",
+      "body": {
+        "name": "Recycling",
+        "slug": "recycling"
+      }
+    },
+    {
+      "name": "Get All Tags",
+      "method": "GET",
+      "url": "/api/v1/tags",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "recycle"
+      }
+    },
+    {
+      "name": "Get Tag By Slug",
+      "method": "GET",
+      "url": "/api/v1/tags/slug/:slug",
+      "params": {
+        "slug": "recycling"
+      }
+    },
+    {
+      "name": "Get Single Tag",
+      "method": "GET",
+      "url": "/api/v1/tags/:id",
+      "params": {
+        "id": "cm_tag_01hxyz123abc456def789ghijk"
+      }
+    },
+    {
+      "name": "Update Tag",
+      "method": "PATCH",
+      "url": "/api/v1/tags/:id",
+      "params": {
+        "id": "cm_tag_01hxyz123abc456def789ghijk"
+      },
+      "body": {
+        "name": "Recycling and Reuse",
+        "slug": "recycling-and-reuse"
+      }
+    },
+    {
+      "name": "Delete Tag",
+      "method": "DELETE",
+      "url": "/api/v1/tags/:id",
+      "params": {
+        "id": "cm_tag_01hxyz123abc456def789ghijk"
+      }
+    }
+  ]
+}

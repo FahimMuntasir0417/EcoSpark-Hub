@@ -1,0 +1,126 @@
+{
+  "module": "Campaign",
+  "baseUrl": "/api/v1/campaigns",
+  "endpoints": [
+    {
+      "name": "Create Campaign",
+      "method": "POST",
+      "url": "/api/v1/campaigns",
+      "contentType": "multipart/form-data",
+      "formData": {
+        "title": "Green Innovation Sprint",
+        "slug": "green-innovation-sprint",
+        "description": "A campaign for eco-friendly idea submissions",
+        "bannerImage": "<FILE:image>",
+        "isActive": true,
+        "isPublic": true,
+        "startDate": "2026-04-10T00:00:00.000Z",
+        "endDate": "2026-05-10T00:00:00.000Z",
+        "goalText": "Collect 100 sustainability ideas",
+        "seoTitle": "Green Innovation Sprint",
+        "seoDescription": "Public campaign for sustainability ideas"
+      },
+      "formDataUsingDataField": {
+        "bannerImage": "<FILE:image>",
+        "data": "{\"title\":\"Green Innovation Sprint\",\"slug\":\"green-innovation-sprint\",\"description\":\"A campaign for eco-friendly idea submissions\",\"isActive\":true,\"isPublic\":true,\"startDate\":\"2026-04-10T00:00:00.000Z\",\"endDate\":\"2026-05-10T00:00:00.000Z\",\"goalText\":\"Collect 100 sustainability ideas\",\"seoTitle\":\"Green Innovation Sprint\",\"seoDescription\":\"Public campaign for sustainability ideas\"}"
+      },
+      "notes": "Use the `bannerImage` multer field to upload the campaign banner. The uploaded file URL is saved into `bannerImage`. If you already have a hosted image URL, you can still send JSON with `bannerImage` instead of uploading a file.",
+      "body": {
+        "title": "Green Innovation Sprint",
+        "slug": "green-innovation-sprint",
+        "description": "A campaign for eco-friendly idea submissions",
+        "bannerImage": "https://example.com/campaigns/green-sprint.jpg",
+        "isActive": true,
+        "isPublic": true,
+        "startDate": "2026-04-10T00:00:00.000Z",
+        "endDate": "2026-05-10T00:00:00.000Z",
+        "goalText": "Collect 100 sustainability ideas",
+        "seoTitle": "Green Innovation Sprint",
+        "seoDescription": "Public campaign for sustainability ideas"
+      }
+    },
+    {
+      "name": "Get All Campaigns",
+      "method": "GET",
+      "url": "/api/v1/campaigns",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "green",
+        "isActive": true
+      }
+    },
+    {
+      "name": "Get Campaign By Slug",
+      "method": "GET",
+      "url": "/api/v1/campaigns/slug/:slug",
+      "params": {
+        "slug": "green-innovation-sprint"
+      }
+    },
+    {
+      "name": "Get Single Campaign",
+      "method": "GET",
+      "url": "/api/v1/campaigns/:id",
+      "params": {
+        "id": "cm_campaign_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Update Campaign",
+      "method": "PATCH",
+      "url": "/api/v1/campaigns/:id",
+      "params": {
+        "id": "cm_campaign_01hxyz123abc456def789ghij"
+      },
+      "contentType": "multipart/form-data",
+      "formData": {
+        "description": "Updated campaign description",
+        "bannerImage": "<FILE:image>",
+        "goalText": "Collect 150 sustainability ideas"
+      },
+      "formDataUsingDataField": {
+        "bannerImage": "<FILE:image>",
+        "data": "{\"description\":\"Updated campaign description\",\"goalText\":\"Collect 150 sustainability ideas\"}"
+      },
+      "notes": "You can upload a new `bannerImage` file with multer or send a hosted image URL in JSON.",
+      "body": {
+        "description": "Updated campaign description",
+        "bannerImage": "https://example.com/campaigns/updated-green-sprint.jpg",
+        "goalText": "Collect 150 sustainability ideas"
+      }
+    },
+    {
+      "name": "Update Campaign Status",
+      "method": "PATCH",
+      "url": "/api/v1/campaigns/:id/status",
+      "params": {
+        "id": "cm_campaign_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "isActive": true,
+        "isPublic": false
+      }
+    },
+    {
+      "name": "Delete Campaign",
+      "method": "DELETE",
+      "url": "/api/v1/campaigns/:id",
+      "params": {
+        "id": "cm_campaign_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get Campaign Ideas",
+      "method": "GET",
+      "url": "/api/v1/campaigns/:id/ideas",
+      "params": {
+        "id": "cm_campaign_01hxyz123abc456def789ghij"
+      },
+      "query": {
+        "page": 1,
+        "limit": 10
+      }
+    }
+  ]
+}

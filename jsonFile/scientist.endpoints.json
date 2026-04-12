@@ -1,0 +1,112 @@
+{
+  "module": "Scientist",
+  "baseUrl": "/api/v1/scientists",
+  "endpoints": [
+    {
+      "name": "Create Scientist",
+      "method": "POST",
+      "url": "/api/v1/scientists",
+      "body": {
+        "userId": "user_01hxyz123abc456def789ghij",
+        "scientist": {
+          "profilePhoto": "https://example.com/scientists/profile.jpg",
+          "contactNumber": "+8801712345678",
+          "address": "Dhaka, Bangladesh",
+          "institution": "EcoSpark Research Lab",
+          "department": "Climate Innovation",
+          "specialization": "Renewable Energy",
+          "researchInterests": "Solar systems, waste-to-energy",
+          "yearsOfExperience": 6,
+          "qualification": "PhD in Environmental Science",
+          "linkedinUrl": "https://linkedin.com/in/example",
+          "googleScholarUrl": "https://scholar.google.com/citations?user=example",
+          "orcid": "0000-0000-0000-0000"
+        },
+        "specialtyIds": [
+          "019cf5d3-959e-7020-a488-8b4ee37af6f3"
+        ]
+      }
+    },
+    {
+      "name": "Get All Scientists",
+      "method": "GET",
+      "url": "/api/v1/scientists",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "energy"
+      }
+    },
+    {
+      "name": "Get Scientist By User Id",
+      "method": "GET",
+      "url": "/api/v1/scientists/user/:userId",
+      "params": {
+        "userId": "user_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Get Single Scientist",
+      "method": "GET",
+      "url": "/api/v1/scientists/:id",
+      "params": {
+        "id": "cm_scientist_01hxyz123abc456def789ghij"
+      }
+    },
+    {
+      "name": "Update Scientist",
+      "method": "PATCH",
+      "url": "/api/v1/scientists/:id",
+      "params": {
+        "id": "cm_scientist_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "institution": "Updated Research Institute",
+        "yearsOfExperience": 7,
+        "qualification": "Postdoctoral Researcher"
+      }
+    },
+    {
+      "name": "Assign Scientist Specialties",
+      "method": "PATCH",
+      "url": "/api/v1/scientists/:id/specialties",
+      "params": {
+        "id": "cm_scientist_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "specialtyIds": [
+          "019cf5d3-959e-7020-a488-8b4ee37af6f3",
+          "019cf5d3-959e-7020-a488-8b4ee37af6f4"
+        ]
+      }
+    },
+    {
+      "name": "Remove Scientist Specialty",
+      "method": "DELETE",
+      "url": "/api/v1/scientists/:id/specialties/:specialtyId",
+      "params": {
+        "id": "cm_scientist_01hxyz123abc456def789ghij",
+        "specialtyId": "019cf5d3-959e-7020-a488-8b4ee37af6f3"
+      }
+    },
+    {
+      "name": "Verify Scientist",
+      "method": "PATCH",
+      "url": "/api/v1/scientists/:id/verify",
+      "params": {
+        "id": "cm_scientist_01hxyz123abc456def789ghij"
+      },
+      "body": {
+        "verified": true
+      }
+    },
+    {
+      "name": "Delete Scientist",
+      "method": "DELETE",
+      "url": "/api/v1/scientists/:id",
+      "params": {
+        "id": "cm_scientist_01hxyz123abc456def789ghij"
+      }
+    }
+  ]
+}

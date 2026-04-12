@@ -1,0 +1,54 @@
+{
+  "module": "Specialty",
+  "baseUrl": "/api/v1/specialties",
+  "endpoints": [
+    {
+      "name": "Create Specialty",
+      "method": "POST",
+      "url": "/api/v1/specialties",
+      "body": {
+        "title": "Renewable Energy",
+        "description": "Research and practice related to renewable and sustainable energy systems",
+        "icon": "leaf"
+      }
+    },
+    {
+      "name": "Get All Specialties",
+      "method": "GET",
+      "url": "/api/v1/specialties",
+      "query": {
+        "page": 1,
+        "limit": 10,
+        "searchTerm": "energy"
+      }
+    },
+    {
+      "name": "Get Single Specialty",
+      "method": "GET",
+      "url": "/api/v1/specialties/:id",
+      "params": {
+        "id": "019cf5d3-959e-7020-a488-8b4ee37af6f3"
+      }
+    },
+    {
+      "name": "Update Specialty",
+      "method": "PATCH",
+      "url": "/api/v1/specialties/:id",
+      "params": {
+        "id": "019cf5d3-959e-7020-a488-8b4ee37af6f3"
+      },
+      "body": {
+        "description": "Updated specialty description",
+        "icon": "bolt"
+      }
+    },
+    {
+      "name": "Delete Specialty",
+      "method": "DELETE",
+      "url": "/api/v1/specialties/:id",
+      "params": {
+        "id": "019cf5d3-959e-7020-a488-8b4ee37af6f3"
+      }
+    }
+  ]
+}
