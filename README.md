@@ -4,18 +4,32 @@ EcoSpark is a TypeScript and Express backend for an eco-innovation platform wher
 
 This repository contains the backend only. The API is organized by domain modules, uses Prisma with PostgreSQL, stores uploaded assets in Cloudinary, sends transactional emails with Nodemailer and EJS templates, and supports both Better Auth sessions and custom JWT access tokens.
 
-## Live URLs
+## Project Links
 
-- API: Not provided
-- Frontend: Not provided
-- Admin: Not provided
+- Frontend Repo: https://github.com/FahimMuntasir0417/EcoSpark-Frontend
+- Backend Repo: https://github.com/FahimMuntasir0417/EcoSpark-Hub
+- Frontend Live: https://eco-spark-frontend.vercel.app
+- Backend Live: https://assignment-eco-spark.vercel.app
+- Demo Video: https://drive.google.com/file/d/1ZzTSUULNzsSZ-n4m5TGL6SHEAomqg9z7/view
+
+## Demo Credentials
+
+### Admin
+
+- Email: `admin@ecospark.local`
+- Password: `Admin12345`
+
+### Scientist
+
+- Email: `muntasirbejoy66@gmail.com`
+- Password: `StrongPass123!`
 
 ## Overview
 
 The platform currently supports:
 
 - Member registration, login, email verification, password reset, refresh token flow, and Google OAuth
-- Role-based accounts for `SUPER_ADMIN`, `ADMIN`, `MODERATOR`, `SCIENTIST`, and `MEMBER`
+- Role-based accounts for `ADMIN`, `SCIENTIST`, and `MEMBER`
 - Member-to-scientist promotion, specialty assignment, and scientist verification
 - Idea creation, review, approval, rejection, publishing, featuring, highlighting, media uploads, and attachments
 - Engagement features including votes, comments, threaded replies, and bookmarks
@@ -78,22 +92,22 @@ Better Auth runtime routes are mounted separately under:
 
 ### Module Map
 
-| Module | Base Route | Responsibility |
-| --- | --- | --- |
-| Auth | `/api/v1/auth` | Registration, login, profile, refresh token, email verification, password reset, Google OAuth helpers |
-| Better Auth | `/api/auth` | Better Auth handler for session and OAuth internals |
-| Specialties | `/api/v1/specialties` | Scientist specialty catalog |
-| Scientists | `/api/v1/scientists` | Scientist profiles, verification, specialty assignment |
-| Categories | `/api/v1/categories` | Idea category management |
-| Tags | `/api/v1/tags` | Idea tag management |
-| Ideas | `/api/v1/ideas` | Idea CRUD, status transitions, tags, attachments, media |
-| Campaigns | `/api/v1/campaigns` | Campaign CRUD and campaign-linked ideas |
-| Interactions | `/api/v1/interactions` | Votes, comments, replies, bookmarks |
-| Moderation | `/api/v1/moderation` | Reports, review feedback, moderation actions |
-| Commerce | `/api/v1/commerce` | Stripe checkout sessions, purchases, refunds, transactions |
-| Community | `/api/v1/community` | Experience reports, notifications, newsletter |
-| Users | `/api/v1/users` | Self-service profile, vote, and comment endpoints |
-| Analytics | `/api/v1/analytics` | Member, scientist, and admin dashboard data |
+| Module       | Base Route             | Responsibility                                                                                        |
+| ------------ | ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| Auth         | `/api/v1/auth`         | Registration, login, profile, refresh token, email verification, password reset, Google OAuth helpers |
+| Better Auth  | `/api/auth`            | Better Auth handler for session and OAuth internals                                                   |
+| Specialties  | `/api/v1/specialties`  | Scientist specialty catalog                                                                           |
+| Scientists   | `/api/v1/scientists`   | Scientist profiles, verification, specialty assignment                                                |
+| Categories   | `/api/v1/categories`   | Idea category management                                                                              |
+| Tags         | `/api/v1/tags`         | Idea tag management                                                                                   |
+| Ideas        | `/api/v1/ideas`        | Idea CRUD, status transitions, tags, attachments, media                                               |
+| Campaigns    | `/api/v1/campaigns`    | Campaign CRUD and campaign-linked ideas                                                               |
+| Interactions | `/api/v1/interactions` | Votes, comments, replies, bookmarks                                                                   |
+| Moderation   | `/api/v1/moderation`   | Reports, review feedback, moderation actions                                                          |
+| Commerce     | `/api/v1/commerce`     | Stripe checkout sessions, purchases, refunds, transactions                                            |
+| Community    | `/api/v1/community`    | Experience reports, notifications, newsletter                                                         |
+| Users        | `/api/v1/users`        | Self-service profile, vote, and comment endpoints                                                     |
+| Analytics    | `/api/v1/analytics`    | Member, scientist, and admin dashboard data                                                           |
 
 ### Access Model
 
@@ -263,17 +277,17 @@ pnpm start
 
 ## Available Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Run the API with `ts-node-dev` |
-| `pnpm build` | Generate Prisma client and compile TypeScript |
-| `pnpm start` | Run the compiled server from `dist/server.js` |
-| `pnpm seed:admin` | Compile and run the admin seed script |
-| `pnpm lint` | Lint `src/**/*.ts` |
-| `pnpm lint:fix` | Lint and auto-fix supported issues |
-| `pnpm format` | Format the repository with Prettier |
+| Command               | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| `pnpm dev`            | Run the API with `ts-node-dev`                            |
+| `pnpm build`          | Generate Prisma client and compile TypeScript             |
+| `pnpm start`          | Run the compiled server from `dist/server.js`             |
+| `pnpm seed:admin`     | Compile and run the admin seed script                     |
+| `pnpm lint`           | Lint `src/**/*.ts`                                        |
+| `pnpm lint:fix`       | Lint and auto-fix supported issues                        |
+| `pnpm format`         | Format the repository with Prettier                       |
 | `pnpm stripe:webhook` | Start Stripe CLI forwarding to the local webhook endpoint |
-| `pnpm stripe:trigger` | Trigger a Stripe test checkout completion event |
+| `pnpm stripe:trigger` | Trigger a Stripe test checkout completion event           |
 
 > Note: the Stripe helper scripts currently point to `C:\Tools\stripe\stripe.exe`, so they assume a Windows-local Stripe CLI installation at that path.
 
