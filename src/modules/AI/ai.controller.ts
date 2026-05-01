@@ -47,7 +47,7 @@ const getTrendingIdeas = catchAsync(async (req: Request, res: Response) => {
 
 const getPersonalizedBanner = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await AiService.getPersonalizedBanner(req.user!.userId);
+    const result = await AiService.getPersonalizedBanner(req.user?.userId);
 
     sendResponse(res, {
       httpStatusCode: status.OK,
@@ -60,8 +60,8 @@ const getPersonalizedBanner = catchAsync(
 
 const getDashboardInsights = catchAsync(async (req: Request, res: Response) => {
   const result = await AiService.getDashboardInsights(
-    req.user!.userId,
-    req.user!.role,
+    req.user?.userId,
+    req.user?.role,
   );
 
   sendResponse(res, {
@@ -74,8 +74,8 @@ const getDashboardInsights = catchAsync(async (req: Request, res: Response) => {
 
 const getNextActions = catchAsync(async (req: Request, res: Response) => {
   const result = await AiService.getNextActions(
-    req.user!.userId,
-    req.user!.role,
+    req.user?.userId,
+    req.user?.role,
   );
 
   sendResponse(res, {
@@ -98,7 +98,7 @@ const getAnomalyAlerts = catchAsync(async (_req: Request, res: Response) => {
 });
 
 const chat = catchAsync(async (req: Request, res: Response) => {
-  const result = await AiService.chat(req.user!.userId, req.body as IChatPayload);
+  const result = await AiService.chat(req.user?.userId, req.body as IChatPayload);
 
   sendResponse(res, {
     httpStatusCode: status.OK,

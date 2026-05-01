@@ -155,6 +155,111 @@ const clampLimit = (
 const normalizeSearchTerm = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
 
+const getDefaultBanner = () => ({
+  title: "Discover High-Impact Sustainability Ideas",
+  subtitle:
+    "Explore trending EcoSpark ideas ranked by activity and eco impact.",
+  ctaText: "Explore Trending Ideas",
+  ctaLink: "/ai-discover",
+  personalization: {
+    category: null,
+    tag: null,
+  },
+});
+
+const getChatSuggestedActions = (hasUserContext: boolean) =>
+  hasUserContext
+    ? [
+        {
+          label: "Explore recommended ideas",
+          href: "/ai-discover",
+        },
+        {
+          label: "Review dashboard insights",
+          href: "/dashboard",
+        },
+      ]
+    : [
+        {
+          label: "Browse ideas",
+          href: "/idea",
+        },
+        {
+          label: "Login for personalization",
+          href: "/login",
+        },
+      ];
+
+const getFallbackChatReply = (message: string, hasUserContext: boolean) => {
+  const normalizedMessage = message.toLowerCase();
+
+  if (normalizedMessage.includes("coupon") || normalizedMessage.includes("discount")) {
+    return "EcoSpark can suggest discounts or bundles from user behavior when the backend has active coupon data. For now, sign in and browse ideas so recommendations can learn your interests.";
+  }
+
+  if (normalizedMessage.includes("recommend")) {
+    return hasUserContext
+      ? "Open AI Discover to see personalized idea recommendations based on your votes, bookmarks, purchases, and created ideas."
+      : "Open AI Discover for trending ideas. Sign in first if you want personalized recommendations.";
+  }
+
+  if (normalizedMessage.includes("submit") || normalizedMessage.includes("idea")) {
+    return "To submit an idea, sign in as a scientist, open the create idea workspace, enter the core details, then use Smart idea autofill to improve the summary, solution, benefits, risks, and resources.";
+  }
+
+  if (normalizedMessage.includes("dashboard") || normalizedMessage.includes("analytics")) {
+    return "Dashboard AI insights summarize idea activity, next actions, and admin anomaly alerts. Sign in and open your dashboard to see role-specific insights.";
+  }
+
+  return "EcoSpark helps users discover sustainability ideas, browse campaigns, submit ideas, purchase paid idea access, and review AI insights. The live AI provider is unavailable right now, so this built-in assistant is answering with product guidance.";
+};
+
+const buildFallbackIdeaSuggestions = (
+  payload: IIdeaFormSuggestionPayload,
+  categories: Array<{ name: string; slug: string }>,
+  tags: Array<{ name: string; slug: string }>,
+  preference: {
+    topCategory: { name: string } | null;
+    topTag: { name: string } | null;
+  },
+) => {
+  const title = payload.title?.trim() || "this sustainability idea";
+  const problem = payload.problemStatement?.trim();
+  const solution = payload.proposedSolution?.trim();
+  const audience = payload.targetAudience?.trim() || "the target community";
+  const suggestedCategoryName =
+    preference.topCategory?.name ?? categories[0]?.name ?? undefined;
+  const suggestedTags = [
+    ...(preference.topTag ? [preference.topTag.name] : []),
+    ...tags.slice(0, 4).map((tag) => tag.name),
+  ].filter(Boolean);
+
+  return {
+    excerpt: `${title} helps ${audience} solve an environmental problem with a practical, measurable approach.`,
+    description: [
+      `${title} focuses on a sustainability challenge that affects ${audience}.`,
+      problem ? `Problem: ${problem}` : undefined,
+      solution ? `Solution: ${solution}` : undefined,
+      "The idea should define the implementation context, required partners, expected environmental impact, and how success will be measured.",
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+    proposedSolution:
+      solution ??
+      "Use a small, testable pilot first, measure environmental and user outcomes, then scale the idea through partners or campaigns.",
+    implementationSteps:
+      "1. Validate the problem with target users.\n2. Build a low-cost pilot.\n3. Track impact metrics such as CO2, waste, water, or energy savings.\n4. Collect feedback and improve the model.\n5. Publish results and prepare for broader adoption.",
+    expectedBenefits:
+      "Reduced environmental waste, clearer community impact, stronger awareness, and a reusable model for future sustainability projects.",
+    risksAndChallenges:
+      "Possible risks include low adoption, limited resources, measurement gaps, supplier delays, or unclear long-term maintenance ownership.",
+    requiredResources:
+      "A pilot team, local partners, basic materials or tools, data collection support, and a simple reporting process.",
+    suggestedCategoryName,
+    suggestedTags: Array.from(new Set(suggestedTags)).slice(0, 5),
+  };
+};
+
 const daysSince = (value?: Date | null) => {
   if (!value) {
     return 365;
@@ -297,7 +402,9 @@ const getUserPreferenceProfile = async (userId: string) => {
 };
 
 const getSearchSuggestions = async (query: Record<string, unknown>) => {
-  const searchTerm = normalizeSearchTerm(query.searchTerm);
+  const searchTerm = normalizeSearchTerm(
+    query.searchTerm ?? query.q ?? query.search,
+  );
   const limit = clampLimit(query.limit, 8, 15);
 
   if (searchTerm.length < 2) {
@@ -378,19 +485,19 @@ const getSearchSuggestions = async (query: Record<string, unknown>) => {
       type: "IDEA" as const,
       label: idea.title,
       value: idea.slug,
-      href: `/ideas/${idea.slug}`,
+      href: `/idea/${idea.slug}`,
     })),
     ...categories.map((category) => ({
       type: "CATEGORY" as const,
       label: category.name,
       value: category.id,
-      href: `/ideas?categoryId=${category.id}`,
+      href: `/idea?categoryId=${category.id}`,
     })),
     ...tags.map((tag) => ({
       type: "TAG" as const,
       label: tag.name,
       value: tag.id,
-      href: `/ideas?tag=${tag.slug}`,
+      href: `/idea?tag=${tag.slug}`,
     })),
   ];
 
@@ -524,7 +631,11 @@ const getRecommendations = async (
   };
 };
 
-const getPersonalizedBanner = async (userId: string) => {
+const getPersonalizedBanner = async (userId?: string) => {
+  if (!userId) {
+    return getDefaultBanner();
+  }
+
   const preference = await getUserPreferenceProfile(userId);
 
   if (preference.topCategory) {
@@ -533,7 +644,7 @@ const getPersonalizedBanner = async (userId: string) => {
       subtitle:
         "Based on your recent votes, bookmarks, purchases, and created ideas.",
       ctaText: "Explore Recommended Ideas",
-      ctaLink: `/ideas?categoryId=${preference.topCategory.id}`,
+      ctaLink: `/idea?categoryId=${preference.topCategory.id}`,
       personalization: {
         category: preference.topCategory,
         tag: preference.topTag,
@@ -541,16 +652,46 @@ const getPersonalizedBanner = async (userId: string) => {
     };
   }
 
+  return getDefaultBanner();
+};
+
+const getPublicDashboardInsights = async () => {
+  const [publicIdeas, featuredIdeas, activeCategories] = await Promise.all([
+    prisma.idea.count({
+      where: publicIdeaWhere,
+    }),
+    prisma.idea.count({
+      where: {
+        ...publicIdeaWhere,
+        isFeatured: true,
+      },
+    }),
+    prisma.category.count({
+      where: {
+        isActive: true,
+      },
+    }),
+  ]);
+
   return {
-    title: "Discover High-Impact Sustainability Ideas",
-    subtitle:
-      "Explore trending EcoSpark ideas ranked by activity and eco impact.",
-    ctaText: "Explore Trending Ideas",
-    ctaLink: "/ai-discover",
-    personalization: {
-      category: null,
-      tag: null,
-    },
+    role: "GUEST",
+    insights: [
+      {
+        type: "INFO" as const,
+        title: "Public idea library",
+        message: `${publicIdeas} approved or published ideas are available for discovery.`,
+      },
+      {
+        type: "SUCCESS" as const,
+        title: "Featured opportunities",
+        message: `${featuredIdeas} ideas are currently highlighted by EcoSpark.`,
+      },
+      {
+        type: "INFO" as const,
+        title: "Category coverage",
+        message: `${activeCategories} active categories are available for browsing.`,
+      },
+    ],
   };
 };
 
@@ -752,7 +893,11 @@ const getUserDashboardInsights = async (userId: string, role: Role) => {
   };
 };
 
-const getDashboardInsights = async (userId: string, role: Role) => {
+const getDashboardInsights = async (userId?: string, role?: Role) => {
+  if (!userId || !role) {
+    return getPublicDashboardInsights();
+  }
+
   if (role === Role.ADMIN || role === Role.SUPER_ADMIN) {
     return getAdminDashboardInsights();
   }
@@ -760,7 +905,27 @@ const getDashboardInsights = async (userId: string, role: Role) => {
   return getUserDashboardInsights(userId, role);
 };
 
-const getNextActions = async (userId: string, role: Role) => {
+const getNextActions = async (userId?: string, role?: Role) => {
+  if (!userId || !role) {
+    return {
+      actions: [
+        {
+          title: "Explore AI Discover",
+          reason: "Browse trending ideas and public AI search suggestions.",
+          link: "/ai-discover",
+          priority: "LOW" as const,
+        },
+        {
+          title: "Sign in for personalization",
+          reason:
+            "Personalized recommendations need your votes, bookmarks, purchases, or created ideas.",
+          link: "/login",
+          priority: "MEDIUM" as const,
+        },
+      ],
+    };
+  }
+
   const [draftIdeas, pendingPurchases, unreadNotifications, bookmarkCount] =
     await Promise.all([
       prisma.idea.count({
@@ -1160,7 +1325,9 @@ const generateAiText = async (instructions: string, input: string) => {
     }),
   });
 
-  const body = (await response.json()) as OpenAiResponseBody;
+  const body = (await response
+    .json()
+    .catch(() => ({}))) as OpenAiResponseBody;
 
   if (!response.ok) {
     throw new AppError(
@@ -1218,8 +1385,17 @@ const getChatContext = async (userId: string) => {
   };
 };
 
-const chat = async (userId: string, payload: IChatPayload) => {
-  const context = await getChatContext(userId);
+const chat = async (userId: string | undefined, payload: IChatPayload) => {
+  const hasUserContext = Boolean(userId);
+  const context = userId
+    ? await getChatContext(userId)
+    : {
+        user: null,
+        createdIdeas: 0,
+        bookmarks: 0,
+        purchases: 0,
+        unreadNotifications: 0,
+      };
   const instructions = [
     "You are EcoSpark AI Assistant.",
     "EcoSpark is an eco-innovation platform for sustainability ideas, campaigns, comments, experience reports, and paid idea access.",
@@ -1233,21 +1409,19 @@ const chat = async (userId: string, payload: IChatPayload) => {
     `User message: ${payload.message}`,
   ].join("\n\n");
 
-  const reply = await generateAiText(instructions, input);
+  try {
+    const reply = await generateAiText(instructions, input);
 
-  return {
-    reply,
-    suggestedActions: [
-      {
-        label: "Explore recommended ideas",
-        href: "/ai-discover",
-      },
-      {
-        label: "Review dashboard insights",
-        href: "/dashboard",
-      },
-    ],
-  };
+    return {
+      reply,
+      suggestedActions: getChatSuggestedActions(hasUserContext),
+    };
+  } catch {
+    return {
+      reply: getFallbackChatReply(payload.message, hasUserContext),
+      suggestedActions: getChatSuggestedActions(hasUserContext),
+    };
+  }
 };
 
 const parseJsonFromAiText = (value: string) => {
@@ -1312,8 +1486,16 @@ const getIdeaFormSuggestions = async (
     availableTags: tags,
   });
 
-  const text = await generateAiText(instructions, input);
-  const parsed = parseJsonFromAiText(text);
+  let parsed: Record<string, unknown>;
+
+  try {
+    const text = await generateAiText(instructions, input);
+    parsed = parseJsonFromAiText(text);
+  } catch {
+    return {
+      suggestions: buildFallbackIdeaSuggestions(payload, categories, tags, preference),
+    };
+  }
 
   return {
     suggestions: {
