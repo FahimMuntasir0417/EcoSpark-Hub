@@ -167,8 +167,101 @@ const getDefaultBanner = () => ({
   },
 });
 
-const getChatSuggestedActions = (hasUserContext: boolean) =>
-  hasUserContext
+const hasAnyKeyword = (value: string, keywords: string[]) =>
+  keywords.some((keyword) => value.includes(keyword));
+
+const getChatSuggestedActions = (hasUserContext: boolean, message = "") => {
+  const normalizedMessage = message.toLowerCase();
+
+  if (hasAnyKeyword(normalizedMessage, ["search", "find", "browse"])) {
+    return [
+      {
+        label: "Browse ideas",
+        href: "/idea",
+      },
+      {
+        label: "Open AI Discover",
+        href: "/ai-discover",
+      },
+    ];
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["campaign"])) {
+    return [
+      {
+        label: "View campaigns",
+        href: "/campaigns",
+      },
+      {
+        label: "Browse ideas",
+        href: "/idea",
+      },
+    ];
+  }
+
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "submit",
+      "create",
+      "post",
+      "autofill",
+      "form",
+    ])
+  ) {
+    return [
+      {
+        label: hasUserContext ? "Create idea" : "Login to create",
+        href: hasUserContext ? "/scientist/dashboard/create-idea" : "/login",
+      },
+      {
+        label: "Browse examples",
+        href: "/idea",
+      },
+    ];
+  }
+
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "dashboard",
+      "analytics",
+      "insight",
+      "report",
+      "anomaly",
+    ])
+  ) {
+    return [
+      {
+        label: hasUserContext ? "Open dashboard" : "Login for dashboard",
+        href: hasUserContext ? "/dashboard" : "/login",
+      },
+      {
+        label: "Open AI Discover",
+        href: "/ai-discover",
+      },
+    ];
+  }
+
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "recommend",
+      "personalized",
+      "trending",
+      "suggest",
+    ])
+  ) {
+    return [
+      {
+        label: "Open AI Discover",
+        href: "/ai-discover",
+      },
+      {
+        label: hasUserContext ? "Browse ideas" : "Login for personalization",
+        href: hasUserContext ? "/idea" : "/login",
+      },
+    ];
+  }
+
+  return hasUserContext
     ? [
         {
           label: "Explore recommended ideas",
@@ -189,29 +282,123 @@ const getChatSuggestedActions = (hasUserContext: boolean) =>
           href: "/login",
         },
       ];
+};
 
 const getFallbackChatReply = (message: string, hasUserContext: boolean) => {
   const normalizedMessage = message.toLowerCase();
 
-  if (normalizedMessage.includes("coupon") || normalizedMessage.includes("discount")) {
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "hi",
+      "hello",
+      "hey",
+      "salam",
+      "assalamu",
+    ])
+  ) {
+    return "Hi. I can help with EcoSpark ideas, AI recommendations, search, campaigns, paid access, dashboards, and idea submission. Ask me what you want to do next.";
+  }
+
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "how",
+      "work",
+      "works",
+      "what can",
+      "what do",
+      "feature",
+    ])
+  ) {
+    return "EcoSpark works as a sustainability idea platform. Users browse public ideas, sign in for personalized recommendations, scientists submit ideas, members can save or purchase paid ideas, and dashboards show AI insights and next actions.";
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["search", "find", "browse"])) {
+    return "Use the idea library to search by title, summary, category, or tag. The AI Discover page can also show search suggestions while you type and surface trending ideas.";
+  }
+
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "recommend",
+      "personalized",
+      "trending",
+      "suggest",
+    ])
+  ) {
+    return hasUserContext
+      ? "Your recommendations are ranked from your EcoSpark activity: votes, bookmarks, purchases, and created ideas. Open AI Discover to see matched ideas and trending items."
+      : "Trending ideas work for everyone. Personalized recommendations need login because the backend needs your activity history.";
+  }
+
+  if (
+    normalizedMessage.includes("coupon") ||
+    normalizedMessage.includes("discount") ||
+    normalizedMessage.includes("offer")
+  ) {
     return "EcoSpark can suggest discounts or bundles from user behavior when the backend has active coupon data. For now, sign in and browse ideas so recommendations can learn your interests.";
   }
 
-  if (normalizedMessage.includes("recommend")) {
-    return hasUserContext
-      ? "Open AI Discover to see personalized idea recommendations based on your votes, bookmarks, purchases, and created ideas."
-      : "Open AI Discover for trending ideas. Sign in first if you want personalized recommendations.";
-  }
-
-  if (normalizedMessage.includes("submit") || normalizedMessage.includes("idea")) {
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "submit",
+      "create",
+      "post",
+      "publish",
+      "new idea",
+    ])
+  ) {
     return "To submit an idea, sign in as a scientist, open the create idea workspace, enter the core details, then use Smart idea autofill to improve the summary, solution, benefits, risks, and resources.";
   }
 
-  if (normalizedMessage.includes("dashboard") || normalizedMessage.includes("analytics")) {
+  if (hasAnyKeyword(normalizedMessage, ["autofill", "form", "draft", "write"])) {
+    return "Smart idea autofill reads your title, problem, solution, audience, category, and tags. It can suggest an excerpt, description, implementation steps, benefits, risks, resources, category, and tags.";
+  }
+
+  if (
+    hasAnyKeyword(normalizedMessage, [
+      "purchase",
+      "paid",
+      "buy",
+      "price",
+      "payment",
+      "checkout",
+    ])
+  ) {
+    return "Free ideas open directly. Paid ideas stay locked until a checkout is completed and the purchase status becomes paid. You can review purchases from your account dashboard.";
+  }
+
+  if (normalizedMessage.includes("campaign")) {
+    return "Campaigns organize sustainability activity around a goal or event. You can browse public campaigns, join relevant idea activity, and track campaign progress from the campaign pages.";
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["dashboard", "analytics", "insight"])) {
     return "Dashboard AI insights summarize idea activity, next actions, and admin anomaly alerts. Sign in and open your dashboard to see role-specific insights.";
   }
 
-  return "EcoSpark helps users discover sustainability ideas, browse campaigns, submit ideas, purchase paid idea access, and review AI insights. The live AI provider is unavailable right now, so this built-in assistant is answering with product guidance.";
+  if (hasAnyKeyword(normalizedMessage, ["anomaly", "error", "unusual", "alert"])) {
+    return "Admin anomaly detection compares recent activity with the previous period and highlights unusual report spikes, failed purchase spikes, idea submission drops, rejected idea increases, or signup spikes.";
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["admin", "manager", "moderation"])) {
+    return "Admins can review platform analytics, moderation queues, user activity, idea performance, purchase signals, and anomaly alerts from the admin dashboard.";
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["scientist", "profile", "verify"])) {
+    return "Scientists can maintain a profile, submit sustainability ideas, track approval status, and use AI autofill to strengthen idea details before review.";
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["login", "register", "account", "sign in"])) {
+    return "Use login for personalized recommendations, saved ideas, paid access, dashboards, and idea submission. Guests can still browse public ideas and trending content.";
+  }
+
+  if (hasAnyKeyword(normalizedMessage, ["support", "contact", "help"])) {
+    return "For support, use the contact or support page with your account email, issue type, and the page where the problem happened. I can also explain EcoSpark workflows here.";
+  }
+
+  const shortMessage = message.trim().slice(0, 90);
+
+  return shortMessage
+    ? `I can help with "${shortMessage}". In fallback mode I answer best about EcoSpark search, recommendations, campaigns, idea submission, purchases, and dashboards. Try asking one of those directly.`
+    : "I can help with EcoSpark search, recommendations, campaigns, idea submission, purchases, and dashboards. Ask a specific question to get a more useful answer.";
 };
 
 const buildFallbackIdeaSuggestions = (
@@ -1414,12 +1601,12 @@ const chat = async (userId: string | undefined, payload: IChatPayload) => {
 
     return {
       reply,
-      suggestedActions: getChatSuggestedActions(hasUserContext),
+      suggestedActions: getChatSuggestedActions(hasUserContext, payload.message),
     };
   } catch {
     return {
       reply: getFallbackChatReply(payload.message, hasUserContext),
-      suggestedActions: getChatSuggestedActions(hasUserContext),
+      suggestedActions: getChatSuggestedActions(hasUserContext, payload.message),
     };
   }
 };
