@@ -204,7 +204,7 @@ EMAIL_SENDER_SMTP_FROM=
 ```env
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_CALLBACK_URL=
+GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/callback/google
 ```
 
 #### Frontend and Redirect URLs
@@ -361,6 +361,7 @@ pnpm start
 - `vercel.json` includes EJS templates in the serverless bundle
 - Better Auth is loaded in a Vercel-friendly way so its ESM modules are traceable during deployment
 - If you deploy behind a frontend, ensure `FRONTEND_URL`, `BETTER_AUTH_URL`, Stripe redirect URLs, and Google callback settings match your deployed domains exactly
+- Google OAuth must authorize the exact backend callback URI in Google Cloud and `GOOGLE_CALLBACK_URL`, for example `https://YOUR_BACKEND_HOST/api/auth/callback/google`.
 
 ## Current Entry Points
 

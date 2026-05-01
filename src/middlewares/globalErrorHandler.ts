@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { TErrorResponse, TErrorSources } from "../interfaces/error.interface";
 import status from "http-status";
 import { handleZodError } from "../errors/handleZodError";
@@ -135,6 +135,7 @@ export const globalErrorHandler = async (
   err: unknown,
   req: Request,
   res: Response,
+  next: NextFunction,
 ) => {
   let errorSources: TErrorSources[] = [];
   let statusCode: number = status.INTERNAL_SERVER_ERROR;
@@ -217,6 +218,10 @@ export const globalErrorHandler = async (
   };
 
   await rollbackUploadedFile(req);
+
+  if (res.headersSent) {
+    return next(err);
+  }
 
   res.status(statusCode).json(errorResponse);
 };

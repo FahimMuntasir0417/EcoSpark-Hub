@@ -95,7 +95,7 @@ const createAuth = async () => {
       google: {
         clientId: envVars.GOOGLE_CLIENT_ID,
         clientSecret: envVars.GOOGLE_CLIENT_SECRET,
-        callbackUrl: envVars.GOOGLE_CALLBACK_URL,
+        redirectURI: envVars.GOOGLE_CALLBACK_URL,
         mapProfileToUser: () => {
           return {
             role: Role.MEMBER,
