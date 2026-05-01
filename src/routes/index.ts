@@ -11,6 +11,7 @@ import { CommerceRoutes } from "../modules/Commerce/commerce.route";
 import { CommunityRoutes } from "../modules/Community/community.route";
 import { UserRoutes } from "../modules/User/user.route";
 import { AnalyticsRoutes } from "../modules/Analytics/analytics.route";
+import { AiRoutes } from "../modules/AI/ai.route";
 
 import { CategoryRoutes } from "../modules/Category/category.route";
 import { TagRoutes } from "../modules/Tag/tag.route";
@@ -69,6 +70,10 @@ const moduleRoutes = [
   {
     path: "/analytics",
     route: AnalyticsRoutes,
+  },
+  {
+    path: "/ai",
+    route: AiRoutes,
   },
 ];
 

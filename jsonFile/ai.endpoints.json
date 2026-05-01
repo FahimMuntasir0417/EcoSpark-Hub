@@ -1,0 +1,71 @@
+{
+  "module": "AI",
+  "baseUrl": "/api/v1/ai",
+  "auth": "Bearer token or auth cookies required for all endpoints",
+  "endpoints": [
+    {
+      "name": "AI Search Suggestions",
+      "method": "GET",
+      "url": "/api/v1/ai/search-suggestions",
+      "query": {
+        "searchTerm": "solar",
+        "limit": 8
+      }
+    },
+    {
+      "name": "Personalized Recommendations",
+      "method": "GET",
+      "url": "/api/v1/ai/recommendations",
+      "query": {
+        "limit": 8
+      }
+    },
+    {
+      "name": "Trending Ideas",
+      "method": "GET",
+      "url": "/api/v1/ai/trending-ideas",
+      "query": {
+        "limit": 8
+      }
+    },
+    {
+      "name": "Personalized Banner",
+      "method": "GET",
+      "url": "/api/v1/ai/personalized-banner"
+    },
+    {
+      "name": "Dashboard Insights",
+      "method": "GET",
+      "url": "/api/v1/ai/dashboard-insights"
+    },
+    {
+      "name": "Next Actions",
+      "method": "GET",
+      "url": "/api/v1/ai/next-actions"
+    },
+    {
+      "name": "Admin Anomaly Alerts",
+      "method": "GET",
+      "url": "/api/v1/ai/anomaly-alerts",
+      "roles": ["ADMIN", "SUPER_ADMIN"]
+    },
+    {
+      "name": "AI Chat",
+      "method": "POST",
+      "url": "/api/v1/ai/chat",
+      "body": {
+        "message": "How can I improve my recycling idea?"
+      }
+    },
+    {
+      "name": "Idea Form Suggestions",
+      "method": "POST",
+      "url": "/api/v1/ai/idea-form-suggestions",
+      "body": {
+        "title": "Plastic waste recycling system",
+        "problemStatement": "Many households throw plastic without sorting.",
+        "proposedSolution": "Reward users for sorted plastic collection."
+      }
+    }
+  ]
+}

@@ -32,6 +32,9 @@ interface EnvConfig {
   STRIPE_PUBLISHABLE_KEY?: string;
   STRIPE_SUCCESS_URL?: string;
   STRIPE_CANCEL_URL?: string;
+  AI_PROVIDER?: string;
+  AI_API_KEY?: string;
+  AI_MODEL?: string;
   CLOUDINARY: {
     CLOUD_NAME: string;
     API_KEY: string;
@@ -107,6 +110,9 @@ const loadEnvVariables = (): EnvConfig => {
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
     STRIPE_SUCCESS_URL: process.env.STRIPE_SUCCESS_URL,
     STRIPE_CANCEL_URL: process.env.STRIPE_CANCEL_URL,
+    AI_PROVIDER: process.env.AI_PROVIDER,
+    AI_API_KEY: process.env.AI_API_KEY,
+    AI_MODEL: process.env.AI_MODEL,
     CLOUDINARY: {
       CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
       API_KEY: process.env.CLOUDINARY_API_KEY as string,
