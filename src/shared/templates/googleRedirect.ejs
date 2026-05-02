@@ -137,6 +137,7 @@
         const errorBox = document.getElementById("errorBox");
         const authSignInUrl = <%- authSignInUrlJson %>;
         const callbackURL = <%- callbackURLJson %>;
+        const errorCallbackURL = <%- errorCallbackURLJson %>;
 
         const showError = (message) => {
           statusEl.textContent = "We couldn’t redirect you to Google.";
@@ -152,6 +153,7 @@
             body: JSON.stringify({
               provider: "google",
               callbackURL,
+              errorCallbackURL,
             }),
           });
 

@@ -67,6 +67,7 @@ const trustedOrigins = getAllowedOrigins(
   envVars.FRONTEND_URL,
   envVars.STRIPE_SUCCESS_URL,
   envVars.STRIPE_CANCEL_URL,
+  envVars.GOOGLE_CALLBACK_URL,
   "http://localhost:3000",
   "http://localhost:5000",
 );

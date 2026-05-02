@@ -12,18 +12,7 @@ import AppError from "../../errors/AppError";
 import { IUpdateMyProfilePayload } from "./auth.interface";
 
 const DEFAULT_GOOGLE_REDIRECT_PATH = "/dashboard";
-
-const getFirstHeaderValue = (value: string | string[] | undefined) => {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-
-  return value;
-};
-
-const getFirstForwardedValue = (value: string | string[] | undefined) => {
-  return getFirstHeaderValue(value)?.split(",")[0]?.trim();
-};
+const OAUTH_HASH_SUCCESS_KEY = "success";
 
 const sanitizeRedirectPath = (value: unknown) => {
   const redirectPath = Array.isArray(value) ? value[0] : value;
@@ -45,17 +34,29 @@ const sanitizeRedirectPath = (value: unknown) => {
   return normalizedPath;
 };
 
-const getRequestOrigin = (req: Request) => {
-  const forwardedProto = getFirstForwardedValue(req.headers["x-forwarded-proto"]);
-  const forwardedHost = getFirstForwardedValue(req.headers["x-forwarded-host"]);
-  const protocol = forwardedProto || req.protocol;
-  const host = forwardedHost || req.get("host");
+const getAuthOrigin = () => {
+  return envVars.BETTER_AUTH_URL.replace(/\/+$/, "");
+};
 
-  if (host) {
-    return `${protocol}://${host}`.replace(/\/+$/, "");
+const buildFrontendOAuthSuccessUrl = (
+  accessToken: string,
+  refreshToken: string,
+  redirectPath: string,
+) => {
+  const url = new URL("/login", envVars.FRONTEND_URL);
+  const hashParams = new URLSearchParams({
+    oauth: OAUTH_HASH_SUCCESS_KEY,
+    accessToken,
+    refreshToken,
+  });
+
+  if (redirectPath !== DEFAULT_GOOGLE_REDIRECT_PATH) {
+    hashParams.set("redirect", redirectPath);
   }
 
-  return envVars.BETTER_AUTH_URL.replace(/\/+$/, "");
+  url.hash = hashParams.toString();
+
+  return url.toString();
 };
 
 const registerMember = catchAsync(async (req: Request, res: Response) => {
@@ -306,25 +307,29 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 // /api/v1/auth/login/google?redirect=/profile
 const googleLogin = catchAsync((req: Request, res: Response) => {
   const redirectPath = sanitizeRedirectPath(req.query.redirect);
-  const requestOrigin = getRequestOrigin(req);
-  const callbackURL = new URL("/api/v1/auth/google/success", requestOrigin);
+  const authOrigin = getAuthOrigin();
+  const authSignInUrl = new URL("/api/auth/sign-in/social", authOrigin);
+  const callbackURL = new URL("/api/v1/auth/google/success", authOrigin);
+  const errorCallbackURL = new URL("/api/v1/auth/oauth/error", authOrigin);
 
   callbackURL.searchParams.set("redirect", redirectPath);
 
   res.render("googleRedirect", {
-    authSignInUrlJson: JSON.stringify("/api/auth/sign-in/social"),
+    authSignInUrlJson: JSON.stringify(authSignInUrl.toString()),
     callbackURL: callbackURL.toString(),
     callbackURLJson: JSON.stringify(callbackURL.toString()),
+    errorCallbackURLJson: JSON.stringify(errorCallbackURL.toString()),
   });
 });
 
 const googleOAuthCallback = catchAsync((req: Request, res: Response) => {
   const queryIndex = req.originalUrl.indexOf("?");
   const queryString = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
-  const requestOrigin = getRequestOrigin(req);
+  const authOrigin = getAuthOrigin();
 
-  res.redirect(`${requestOrigin}/api/auth/callback/google${queryString}`);
+  res.redirect(`${authOrigin}/api/auth/callback/google${queryString}`);
 });
+
 const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
   const redirectPath = sanitizeRedirectPath(req.query.redirect);
   const sessionToken = req.cookies["better-auth.session_token"];
@@ -350,7 +355,9 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
   tokenUtils.setAccessTokenCookie(res, accessToken);
   tokenUtils.setRefreshTokenCookie(res, refreshToken);
 
-  res.redirect(`${envVars.FRONTEND_URL}${redirectPath}`);
+  res.redirect(
+    buildFrontendOAuthSuccessUrl(accessToken, refreshToken, redirectPath),
+  );
 });
 
 const handleOAuthError = catchAsync((req: Request, res: Response) => {

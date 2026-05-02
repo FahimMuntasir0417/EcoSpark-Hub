@@ -360,8 +360,9 @@ pnpm start
 
 - `vercel.json` includes EJS templates in the serverless bundle
 - Better Auth is loaded in a Vercel-friendly way so its ESM modules are traceable during deployment
-- If you deploy behind a frontend, ensure `FRONTEND_URL`, `BETTER_AUTH_URL`, Stripe redirect URLs, and Google callback settings match your deployed domains exactly
+- If you deploy behind a frontend, ensure `FRONTEND_URL`, `BETTER_AUTH_URL`, Stripe redirect URLs, and Google callback settings match your deployed domains exactly.
 - Google OAuth must authorize the exact backend callback URI in Google Cloud and `GOOGLE_CALLBACK_URL`, for example `https://YOUR_BACKEND_HOST/api/auth/callback/google`.
+- `BETTER_AUTH_URL` should be the public backend origin used by Google OAuth; the Google bridge returns the app JWTs to the frontend login page through a short URL fragment that is immediately consumed and removed by the frontend.
 
 ## Current Entry Points
 
