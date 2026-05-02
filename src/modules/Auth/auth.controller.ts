@@ -11,6 +11,53 @@ import { envVars } from "../../config";
 import AppError from "../../errors/AppError";
 import { IUpdateMyProfilePayload } from "./auth.interface";
 
+const DEFAULT_GOOGLE_REDIRECT_PATH = "/dashboard";
+
+const getFirstHeaderValue = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+};
+
+const getFirstForwardedValue = (value: string | string[] | undefined) => {
+  return getFirstHeaderValue(value)?.split(",")[0]?.trim();
+};
+
+const sanitizeRedirectPath = (value: unknown) => {
+  const redirectPath = Array.isArray(value) ? value[0] : value;
+
+  if (typeof redirectPath !== "string") {
+    return DEFAULT_GOOGLE_REDIRECT_PATH;
+  }
+
+  const normalizedPath = redirectPath.trim();
+
+  if (
+    !normalizedPath.startsWith("/") ||
+    normalizedPath.startsWith("//") ||
+    normalizedPath.includes("\\")
+  ) {
+    return DEFAULT_GOOGLE_REDIRECT_PATH;
+  }
+
+  return normalizedPath;
+};
+
+const getRequestOrigin = (req: Request) => {
+  const forwardedProto = getFirstForwardedValue(req.headers["x-forwarded-proto"]);
+  const forwardedHost = getFirstForwardedValue(req.headers["x-forwarded-host"]);
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get("host");
+
+  if (host) {
+    return `${protocol}://${host}`.replace(/\/+$/, "");
+  }
+
+  return envVars.BETTER_AUTH_URL.replace(/\/+$/, "");
+};
+
 const registerMember = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
 
@@ -258,27 +305,28 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 // /api/v1/auth/login/google?redirect=/profile
 const googleLogin = catchAsync((req: Request, res: Response) => {
-  const redirectPath = req.query.redirect || "/dashboard";
-  const encodedRedirectPath = encodeURIComponent(redirectPath as string);
+  const redirectPath = sanitizeRedirectPath(req.query.redirect);
+  const requestOrigin = getRequestOrigin(req);
+  const callbackURL = new URL("/api/v1/auth/google/success", requestOrigin);
 
-  const callbackURL = `${envVars.BETTER_AUTH_URL}/api/v1/auth/google/success?redirect=${encodedRedirectPath}`;
+  callbackURL.searchParams.set("redirect", redirectPath);
 
   res.render("googleRedirect", {
-    callbackURL,
-    betterAuthUrl: envVars.BETTER_AUTH_URL,
+    authSignInUrlJson: JSON.stringify("/api/auth/sign-in/social"),
+    callbackURL: callbackURL.toString(),
+    callbackURLJson: JSON.stringify(callbackURL.toString()),
   });
 });
 
 const googleOAuthCallback = catchAsync((req: Request, res: Response) => {
   const queryIndex = req.originalUrl.indexOf("?");
   const queryString = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
+  const requestOrigin = getRequestOrigin(req);
 
-  res.redirect(
-    `${envVars.BETTER_AUTH_URL}/api/auth/callback/google${queryString}`,
-  );
+  res.redirect(`${requestOrigin}/api/auth/callback/google${queryString}`);
 });
 const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
-  const redirectPath = (req.query.redirect as string) || "/dashboard";
+  const redirectPath = sanitizeRedirectPath(req.query.redirect);
   const sessionToken = req.cookies["better-auth.session_token"];
 
   if (!sessionToken) {
@@ -302,17 +350,12 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
   tokenUtils.setAccessTokenCookie(res, accessToken);
   tokenUtils.setRefreshTokenCookie(res, refreshToken);
 
-  const isValidRedirectPath =
-    redirectPath.startsWith("/") && !redirectPath.startsWith("//");
-
-  const finalRedirectPath = isValidRedirectPath ? redirectPath : "/dashboard";
-
-  res.redirect(`${envVars.FRONTEND_URL}${finalRedirectPath}`);
+  res.redirect(`${envVars.FRONTEND_URL}${redirectPath}`);
 });
 
 const handleOAuthError = catchAsync((req: Request, res: Response) => {
   const error = (req.query.error as string) || "oauth_failed";
-  res.redirect(`${envVars.FRONTEND_URL}/login?error=${error}`);
+  res.redirect(`${envVars.FRONTEND_URL}/login?error=${encodeURIComponent(error)}`);
 });
 
 export const AuthController = {

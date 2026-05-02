@@ -135,6 +135,8 @@
       (async () => {
         const statusEl = document.getElementById("status");
         const errorBox = document.getElementById("errorBox");
+        const authSignInUrl = <%- authSignInUrlJson %>;
+        const callbackURL = <%- callbackURLJson %>;
 
         const showError = (message) => {
           statusEl.textContent = "We couldn’t redirect you to Google.";
@@ -143,13 +145,13 @@
         };
 
         try {
-          const res = await fetch("<%= betterAuthUrl %>/api/auth/sign-in/social", {
+          const res = await fetch(authSignInUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify({
               provider: "google",
-              callbackURL: "<%= callbackURL %>",
+              callbackURL,
             }),
           });
 
