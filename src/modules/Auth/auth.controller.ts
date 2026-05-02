@@ -269,6 +269,14 @@ const googleLogin = catchAsync((req: Request, res: Response) => {
   });
 });
 
+const googleOAuthCallback = catchAsync((req: Request, res: Response) => {
+  const queryIndex = req.originalUrl.indexOf("?");
+  const queryString = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : "";
+
+  res.redirect(
+    `${envVars.BETTER_AUTH_URL}/api/auth/callback/google${queryString}`,
+  );
+});
 const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
   const redirectPath = (req.query.redirect as string) || "/dashboard";
   const sessionToken = req.cookies["better-auth.session_token"];
@@ -320,6 +328,7 @@ export const AuthController = {
   forgetPassword,
   resetPassword,
   googleLogin,
+  googleOAuthCallback,
   googleLoginSuccess,
   handleOAuthError,
 };

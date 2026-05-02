@@ -53,6 +53,7 @@ router.post(
 
 router.get("/google", AuthController.googleLogin);
 router.get("/login/google", AuthController.googleLogin);
+router.get("/google/callback", AuthController.googleOAuthCallback);
 router.get("/google/success", AuthController.googleLoginSuccess);
 router.get("/oauth/error", AuthController.handleOAuthError);
 
