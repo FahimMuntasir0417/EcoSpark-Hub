@@ -1,6 +1,6 @@
 node_modules
 dist
-.env
 /src/generated
 # jsonFile
 .vercel
+config.bat
