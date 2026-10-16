@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node api.js && node dist/server.js",
     "dev": "node api.js && ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "node api.js && tsc",
     "seed:admin": "tsc -p tsconfig.seed.json && node dist-seed/scripts/seed-admin.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
